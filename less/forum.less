@@ -1,0 +1,135 @@
+/*
+ * 🚨 Colours come from Flarum's own variables, never literals — an extension
+ * that hardcodes a palette looks finished on the theme it was built against
+ * and unreadable on a dark one, and the author never sees it because they only
+ * ever look at their own forum.
+ */
+
+.CadenceBlock {
+  margin-top: 12px;
+  width: 100%;
+
+  /*
+   * 🚨 Its own surface, not the theme's.
+   *
+   * The UserCard's background is whatever the member's chosen colour or the
+   * theme's hero gradient happens to be, and four shades of one colour sitting
+   * straight on that is unreadable — which only showed up by looking at it,
+   * because every contrast decision in the squares themselves was correct in
+   * isolation.
+   */
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: var(--border-radius);
+  padding: 10px 12px;
+  backdrop-filter: blur(2px);
+}
+
+/* On a light surface the scrim has to go the other way. */
+.UserCard--light .CadenceBlock,
+.CadenceBlock--onLight {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.CadenceBlock--loading {
+  min-height: 24px;
+}
+
+.CadenceMap-grid {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.CadenceMap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+  flex: none;
+}
+
+.CadenceMap-day {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  padding: 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+
+  /* 🚨 The four levels differ in LIGHTNESS as well as hue. Four shades of one
+     colour is the part of GitHub's graph that fails outright for a colourblind
+     reader, and the aria-label alone does not help someone who can see. */
+  &[data-level='1'] { background: color-mix(in srgb, var(--primary-color) 45%, rgba(255,255,255,0.15)); }
+  &[data-level='2'] { background: color-mix(in srgb, var(--primary-color) 70%, rgba(255,255,255,0.15)); }
+  &[data-level='3'] { background: color-mix(in srgb, var(--primary-color) 88%, #fff); }
+  &[data-level='4'] { background: color-mix(in srgb, var(--primary-color) 100%, #fff); }
+}
+
+button.CadenceMap-day {
+  cursor: pointer;
+
+  &:hover { outline: 1px solid var(--muted-color); }
+  &:focus-visible { outline: 2px solid var(--link-color); outline-offset: 1px; }
+  &.is-selected { outline: 2px solid var(--link-color); }
+}
+
+/* A day outside the window is absent, not empty — see CadenceMap.view(). */
+.CadenceMap-day--blank {
+  background: transparent;
+}
+
+.CadenceMap-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.CadenceMap-kind {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+
+  &.is-active { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  &:focus-visible { outline: 2px solid var(--link-color); }
+}
+
+.CadenceMap-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.CadenceMap-legendLabel { margin: 0 4px; }
+
+.CadenceMap-detail {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+
+  .CadenceMap-detailKinds { margin-left: 8px; }
+}
+
+/* The compact trace, beside a post author or on a card. */
+.CadenceSpark {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 14px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.CadenceSpark-bar {
+  width: 2px;
+  background: var(--muted-color);
+  border-radius: 1px;
+  opacity: 0.75;
+}

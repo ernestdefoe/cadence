@@ -1,0 +1,26 @@
+{
+    "name": "ernestdefoe/cadence",
+    "description": "Cadence — see a member's rhythm, not just their volume. An activity map on every profile, with the day you click actually opening that day.",
+    "keywords": ["flarum", "flarum-extension", "activity", "profile", "heatmap", "statistics"],
+    "type": "flarum-extension",
+    "license": "MIT",
+    "authors": [{ "name": "Ernest Defoe", "email": "ernestdefoe@gmail.com" }],
+    "homepage": "https://github.com/ernestdefoe/cadence",
+    "support": {
+        "issues": "https://github.com/ernestdefoe/cadence/issues",
+        "source": "https://github.com/ernestdefoe/cadence"
+    },
+    "require": { "php": "^8.3", "flarum/core": "^2.0" },
+    "autoload": { "psr-4": { "ErnestDefoe\\Cadence\\": "src/" } },
+    "autoload-dev": { "psr-4": { "ErnestDefoe\\Cadence\\Tests\\": "tests/" } },
+    "extra": {
+        "flarum-extension": {
+            "title": "Cadence",
+            "category": "feature",
+            "icon": { "name": "fas fa-chart-simple", "backgroundColor": "#0f766e", "color": "#fff" }
+        }
+    },
+    "config": { "sort-packages": true },
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
