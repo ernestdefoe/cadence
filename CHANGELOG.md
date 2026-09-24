@@ -2,7 +2,7 @@
 
 Cadence — see a member's rhythm, not just their volume.
 
-## [Unreleased]
+## [1.0.0] — 2026-09-23
 
 Initial release.
 
