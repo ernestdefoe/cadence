@@ -10,6 +10,16 @@ every post and on user cards.
 
 ---
 
+![A member's activity map: a year of squares, darker where they did more, with All, Discussions and Replies above it](screenshots/day.png)
+
+Press any square and it tells you what happened that day: *2 things on
+September 7, 2026 — 1 discussion started · 1 reply*.
+
+On a phone the map scrolls sideways inside the profile card, and it opens on the
+newest weeks:
+
+<img src="screenshots/phone.png" alt="The map on a phone, opened on the most recent weeks" width="390">
+
 ## Why not just copy GitHub's graph
 
 Because GitHub's has six problems, and on a forum they matter more than they do
@@ -45,6 +55,12 @@ along on the user the page had already loaded. A placement that appears once per
 post cannot fetch its own data — thirty posts would be thirty requests, which is
 how a shared host runs out of database connections and returns 500 for the whole
 forum rather than for the decoration that caused it.
+
+## Settings
+
+Admin → Cadence:
+
+![Cadence's settings: the map on profiles, a sparkline beside posts, and one on user cards](screenshots/settings.png)
 
 ## Installation
 

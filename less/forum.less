@@ -8,6 +8,17 @@
 .CadenceBlock {
   margin-top: 12px;
   width: 100%;
+  /*
+   * 🚨 The map must never widen the card it sits in.
+   *
+   * A year of weeks is ~725px of squares. The UserCard's own grid and flex
+   * boxes size to their content, so on a phone the whole hero grew to 749px and
+   * was clipped at the screen edge — cutting off the most RECENT weeks, the
+   * ones anybody looks at. Containing the inline size takes the map out of its
+   * parents' sizing; the grid then scrolls inside the card instead.
+   */
+  contain: inline-size;
+  box-sizing: border-box;
 
   /*
    * 🚨 Its own surface, not the theme's.

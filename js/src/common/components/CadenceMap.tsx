@@ -151,7 +151,20 @@ export default class CadenceMap extends Component<CadenceMapAttrs> {
 
     return m('div.CadenceMap', [
       this.switcher(),
-      m('div.CadenceMap-grid', { role: 'group', 'aria-label': t('map_label') }, weeks),
+      m(
+        'div.CadenceMap-grid',
+        {
+          role: 'group',
+          'aria-label': t('map_label'),
+          // Where it does not fit (a phone), open on the newest weeks: the
+          // oldest end of the year is the part nobody came to see.
+          oncreate: (vnode: Mithril.VnodeDOM) => {
+            const el = vnode.dom as HTMLElement;
+            el.scrollLeft = el.scrollWidth;
+          },
+        },
+        weeks
+      ),
       this.legend(step),
       this.detail(totals),
     ]);
