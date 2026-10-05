@@ -29,6 +29,10 @@ app.initializers.add('ernestdefoe/cadence', () => {
     const user = this.attrs.user;
     if (!user) return;
 
+    // The full map belongs on the profile, not in the hover card that the
+    // same component draws beside every avatar (that's the sparkline's job).
+    if (String(this.attrs.className || '').includes('UserCard--popover')) return;
+
     // Low priority so it sits below the identity, badges and info lines.
     items.add('cadence', CadenceBlock.component({ user }), -10);
   });
