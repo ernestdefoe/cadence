@@ -2,6 +2,7 @@
 
 namespace ErnestDefoe\Cadence\Listener;
 
+use ErnestDefoe\Cadence\Audience;
 use ErnestDefoe\Cadence\Recorder;
 use Flarum\Post\Event\Deleted as PostDeleted;
 use Flarum\Post\Event\Hidden as PostHidden;
@@ -55,6 +56,11 @@ class ActivitySubscriber
             $events->listen(\FoF\Reactions\Event\PostWasUnreacted::class, [self::class, 'unreacted']);
         }
 
+        // A post held for approval is not recorded when posted; it is when let through.
+        if (class_exists(\Flarum\Approval\Event\PostWasApproved::class)) {
+            $events->listen(\Flarum\Approval\Event\PostWasApproved::class, [self::class, 'approved']);
+        }
+
         if (class_exists(\FoF\BestAnswer\Events\BestAnswerSet::class)) {
             $events->listen(\FoF\BestAnswer\Events\BestAnswerSet::class, [self::class, 'bestAnswerSet']);
             $events->listen(\FoF\BestAnswer\Events\BestAnswerUnset::class, [self::class, 'bestAnswerUnset']);
@@ -75,6 +81,11 @@ class ActivitySubscriber
         $this->adjust($event->post, 1);
     }
 
+    /**
+     * 🚨 Only if it was counted: a post that was already hidden was taken off
+     * when it was hidden, and taking it off again would eat a neighbour's count
+     * in the same hour.
+     */
     public function postDeleted(PostDeleted $event): void
     {
         $this->adjust($event->post, -1);
@@ -83,7 +94,7 @@ class ActivitySubscriber
     /** Hiding is a soft delete; the map should agree with what a reader can see. */
     public function postHidden(PostHidden $event): void
     {
-        $this->adjust($event->post, -1);
+        $this->adjust($event->post, -1, ignoreHidden: true);
     }
 
     public function postRestored(PostRestored $event): void
@@ -91,15 +102,25 @@ class ActivitySubscriber
         $this->adjust($event->post, 1);
     }
 
-    private function adjust(Post $post, int $delta): void
+    public function approved($event): void
+    {
+        $this->adjust($event->post, 1);
+    }
+
+    private function adjust(Post $post, int $delta, bool $ignoreHidden = false): void
     {
         /*
-         * 🚨 `type === 'comment'` and not `instanceof Post`. The entries core
-         * writes for renames, locks, stickies and tag changes are Posts too,
-         * and counting them makes a moderator tidying up look like the most
-         * active member on the forum.
+         * 🚨 Only what the map's audience could see — see Audience. Without
+         * this, a post in a staff-only tag, a private discussion or a direct
+         * message lands on the member's public map, and a guest can read when
+         * and how often they were active somewhere they are not allowed to be.
+         *
+         * Audience also requires `type === 'comment'` and not `instanceof Post`:
+         * the entries core writes for renames, locks, stickies and tag changes
+         * are Posts too, and counting them makes a moderator tidying up look
+         * like the most active member on the forum.
          */
-        if ($post->type !== 'comment' || (int) $post->user_id <= 0) {
+        if (! Audience::canSee($post, $ignoreHidden)) {
             return;
         }
 
@@ -121,25 +142,36 @@ class ActivitySubscriber
      */
     public function liked($event): void
     {
-        $this->recorder->record((int) $event->user->id, $this->now(), Recorder::LIKE, 1);
+        $this->onVisiblePost($event, Recorder::LIKE, 1);
     }
 
     public function unliked($event): void
     {
-        $this->recorder->record((int) $event->user->id, $this->now(), Recorder::LIKE, -1);
+        $this->onVisiblePost($event, Recorder::LIKE, -1);
     }
 
     public function reacted($event): void
     {
-        if ($user = ($event->user ?? $event->actor ?? null)) {
-            $this->recorder->record((int) $user->id, $this->now(), Recorder::REACTION, 1);
-        }
+        $this->onVisiblePost($event, Recorder::REACTION, 1);
     }
 
     public function unreacted($event): void
     {
-        if ($user = ($event->user ?? $event->actor ?? null)) {
-            $this->recorder->record((int) $user->id, $this->now(), Recorder::REACTION, -1);
+        $this->onVisiblePost($event, Recorder::REACTION, -1);
+    }
+
+    /**
+     * 🚨 Liking a post in a staff-only tag is activity in a staff-only tag, so
+     * the same audience rule applies. An event without a post cannot be
+     * checked, and is not recorded.
+     */
+    private function onVisiblePost($event, string $kind, int $delta): void
+    {
+        $user = $event->user ?? $event->actor ?? null;
+        $post = $event->post ?? null;
+
+        if ($user && $post instanceof Post && Audience::canSee($post)) {
+            $this->recorder->record((int) $user->id, $this->now(), $kind, $delta);
         }
     }
 
@@ -151,13 +183,20 @@ class ActivitySubscriber
      */
     public function bestAnswerSet($event): void
     {
-        $this->recorder->record((int) $event->post->user_id, $this->now(), Recorder::BEST_ANSWER, 1);
+        $this->bestAnswer($event, 1);
     }
 
     public function bestAnswerUnset($event): void
     {
-        if ($post = ($event->post ?? null)) {
-            $this->recorder->record((int) $post->user_id, $this->now(), Recorder::BEST_ANSWER, -1);
+        $this->bestAnswer($event, -1);
+    }
+
+    private function bestAnswer($event, int $delta): void
+    {
+        $post = $event->post ?? null;
+
+        if ($post instanceof Post && Audience::canSee($post)) {
+            $this->recorder->record((int) $post->user_id, $this->now(), Recorder::BEST_ANSWER, $delta);
         }
     }
 

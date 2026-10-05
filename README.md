@@ -79,7 +79,13 @@ worse than no map.
 php flarum cadence:rebuild
 ```
 
-Rebuilds every bucket from your posts and likes. Safe to re-run.
+Rebuilds the posts and likes buckets from your forum's own tables. Safe to re-run.
+
+Only activity a guest could see is counted — or, on a forum guests cannot open,
+activity an ordinary member could see. Posts in staff-only tags, private
+discussions and direct messages never reach a map, because the map is one set of
+counts shown to everyone who can open the profile. Change who can see a tag and
+run this again, so activity already counted follows the new permissions.
 
 🚨 **Reactions and best answers cannot be rebuilt** — neither records *when* it
 happened, so those two accumulate from the day you install rather than

@@ -17,7 +17,8 @@
         "flarum-extension": {
             "title": "Cadence",
             "category": "feature",
-            "icon": { "name": "fas fa-chart-simple", "backgroundColor": "#0f766e", "color": "#fff" }
+            "icon": { "name": "fas fa-chart-simple", "backgroundColor": "#0f766e", "color": "#fff" },
+            "optional-dependencies": ["flarum/approval", "flarum/likes", "flarum/tags", "fof/best-answer", "fof/reactions"]
         }
     },
     "config": { "sort-packages": true },
