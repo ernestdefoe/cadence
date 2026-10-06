@@ -112,9 +112,11 @@ forever at the server's.
 - Flarum 2.0
 - PHP 8.3+
 
-## Discuss
+## Support
 
-Questions, ideas and release notes: [Cadence on discuss.flarum.org](https://discuss.flarum.org/d/39992-cadence).
+- **Support forum:** [Cadence on ernestdefoe.online](https://ernestdefoe.online/d/116)
+- **Flarum community:** [Cadence on discuss.flarum.org](https://discuss.flarum.org/d/39992-cadence)
+- **Bug reports:** [GitHub issues](https://github.com/ernestdefoe/cadence/issues)
 
 ## Licence
 
