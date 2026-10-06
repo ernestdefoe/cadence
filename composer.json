@@ -7,6 +7,7 @@
     "authors": [{ "name": "Ernest Defoe", "email": "ernestdefoe@gmail.com" }],
     "homepage": "https://github.com/ernestdefoe/cadence",
     "support": {
+        "forum": "https://discuss.flarum.org/d/39992-cadence",
         "issues": "https://github.com/ernestdefoe/cadence/issues",
         "source": "https://github.com/ernestdefoe/cadence"
     },
