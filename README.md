@@ -112,6 +112,10 @@ forever at the server's.
 - Flarum 2.0
 - PHP 8.3+
 
+## Discuss
+
+Questions, ideas and release notes: [Cadence on discuss.flarum.org](https://discuss.flarum.org/d/39992-cadence).
+
 ## Licence
 
 MIT.
