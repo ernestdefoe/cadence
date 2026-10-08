@@ -4,11 +4,18 @@ namespace ErnestDefoe\Cadence\Listener;
 
 use ErnestDefoe\Cadence\Audience;
 use ErnestDefoe\Cadence\Recorder;
+use Flarum\Approval\Event\PostWasApproved;
+use Flarum\Likes\Event\PostWasLiked;
+use Flarum\Likes\Event\PostWasUnliked;
 use Flarum\Post\Event\Deleted as PostDeleted;
 use Flarum\Post\Event\Hidden as PostHidden;
 use Flarum\Post\Event\Posted;
 use Flarum\Post\Event\Restored as PostRestored;
 use Flarum\Post\Post;
+use FoF\BestAnswer\Events\BestAnswerSet;
+use FoF\BestAnswer\Events\BestAnswerUnset;
+use FoF\Reactions\Event\PostWasReacted;
+use FoF\Reactions\Event\PostWasUnreacted;
 use Illuminate\Contracts\Events\Dispatcher;
 
 /**
@@ -102,7 +109,7 @@ class ActivitySubscriber
         $this->adjust($event->post, 1);
     }
 
-    public function approved($event): void
+    public function approved(PostWasApproved $event): void
     {
         $this->adjust($event->post, 1);
     }
@@ -140,22 +147,22 @@ class ActivitySubscriber
      * makes one popular post outrank showing up every day, which is backwards
      * for a thing called Cadence.
      */
-    public function liked($event): void
+    public function liked(PostWasLiked $event): void
     {
         $this->onVisiblePost($event, Recorder::LIKE, 1);
     }
 
-    public function unliked($event): void
+    public function unliked(PostWasUnliked $event): void
     {
         $this->onVisiblePost($event, Recorder::LIKE, -1);
     }
 
-    public function reacted($event): void
+    public function reacted(PostWasReacted $event): void
     {
         $this->onVisiblePost($event, Recorder::REACTION, 1);
     }
 
-    public function unreacted($event): void
+    public function unreacted(PostWasUnreacted $event): void
     {
         $this->onVisiblePost($event, Recorder::REACTION, -1);
     }
@@ -165,7 +172,7 @@ class ActivitySubscriber
      * the same audience rule applies. An event without a post cannot be
      * checked, and is not recorded.
      */
-    private function onVisiblePost($event, string $kind, int $delta): void
+    private function onVisiblePost(PostWasLiked|PostWasUnliked|PostWasReacted|PostWasUnreacted $event, string $kind, int $delta): void
     {
         $user = $event->user ?? $event->actor ?? null;
         $post = $event->post ?? null;
@@ -181,17 +188,17 @@ class ActivitySubscriber
      * the answer is the thing worth seeing on a map. Crediting the marker makes
      * one diligent moderator the forum's best contributor.
      */
-    public function bestAnswerSet($event): void
+    public function bestAnswerSet(BestAnswerSet $event): void
     {
         $this->bestAnswer($event, 1);
     }
 
-    public function bestAnswerUnset($event): void
+    public function bestAnswerUnset(BestAnswerUnset $event): void
     {
         $this->bestAnswer($event, -1);
     }
 
-    private function bestAnswer($event, int $delta): void
+    private function bestAnswer(BestAnswerSet|BestAnswerUnset $event, int $delta): void
     {
         $post = $event->post ?? null;
 

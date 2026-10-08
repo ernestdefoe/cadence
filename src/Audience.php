@@ -70,7 +70,7 @@ class Audience
         }
 
         // Only present with flarum/approval; null means there is no queue.
-        if ($post->getAttribute('is_approved') !== null && ! $post->is_approved) {
+        if ($post->getAttribute('is_approved') !== null && ! $post->getAttribute('is_approved')) {
             return false;
         }
 
