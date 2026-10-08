@@ -1,28 +1,85 @@
 {
     "name": "ernestdefoe/cadence",
     "description": "Cadence — see a member's rhythm, not just their volume. An activity map on every profile, with the day you click actually opening that day.",
-    "keywords": ["flarum", "flarum-extension", "activity", "profile", "heatmap", "statistics"],
+    "keywords": [
+        "flarum",
+        "flarum-extension",
+        "activity",
+        "profile",
+        "heatmap",
+        "statistics"
+    ],
     "type": "flarum-extension",
     "license": "MIT",
-    "authors": [{ "name": "Ernest Defoe", "email": "ernestdefoe@gmail.com" }],
+    "authors": [
+        {
+            "name": "Ernest Defoe",
+            "email": "ernestdefoe@gmail.com"
+        }
+    ],
     "homepage": "https://github.com/ernestdefoe/cadence",
     "support": {
         "forum": "https://discuss.flarum.org/d/39992-cadence",
         "issues": "https://github.com/ernestdefoe/cadence/issues",
         "source": "https://github.com/ernestdefoe/cadence"
     },
-    "require": { "php": "^8.3", "flarum/core": "^2.0" },
-    "autoload": { "psr-4": { "ErnestDefoe\\Cadence\\": "src/" } },
-    "autoload-dev": { "psr-4": { "ErnestDefoe\\Cadence\\Tests\\": "tests/" } },
+    "require": {
+        "php": "^8.3",
+        "flarum/core": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ErnestDefoe\\Cadence\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ErnestDefoe\\Cadence\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "flarum-extension": {
             "title": "Cadence",
             "category": "feature",
-            "icon": { "name": "fas fa-chart-simple", "backgroundColor": "#0f766e", "color": "#fff" },
-            "optional-dependencies": ["flarum/approval", "flarum/likes", "flarum/tags", "fof/best-answer", "fof/reactions"]
+            "icon": {
+                "name": "fas fa-chart-simple",
+                "backgroundColor": "#0f766e",
+                "color": "#fff"
+            },
+            "optional-dependencies": [
+                "flarum/approval",
+                "flarum/likes",
+                "flarum/tags",
+                "fof/best-answer",
+                "fof/reactions"
+            ]
         }
     },
-    "config": { "sort-packages": true },
+    "config": {
+        "sort-packages": true
+    },
+    "require-dev": {
+        "flarum/approval": "^2.0",
+        "flarum/likes": "^2.0",
+        "flarum/phpstan": "^2.0",
+        "flarum/testing": "^2.0",
+        "fof/best-answer": "^2.0",
+        "fof/reactions": "^2.0"
+    },
+    "scripts": {
+        "test": [
+            "@test:integration"
+        ],
+        "test:integration": "phpunit -c tests/phpunit.integration.xml",
+        "test:setup": "@php tests/integration/setup.php",
+        "analyse:phpstan": "phpstan analyse"
+    },
+    "scripts-descriptions": {
+        "test": "Runs all tests.",
+        "test:integration": "Runs all integration tests.",
+        "test:setup": "Sets up a database for use with integration tests. Execute this only once.",
+        "analyse:phpstan": "Run static analysis"
+    },
     "minimum-stability": "beta",
     "prefer-stable": true
 }
