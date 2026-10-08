@@ -4,6 +4,7 @@ namespace ErnestDefoe\Cadence;
 
 use Carbon\Carbon;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Expression;
 
 /**
  * The only thing that writes to `cadence_activity`.
@@ -30,13 +31,14 @@ class Recorder
     /**
      * Add `$delta` to one bucket, creating it if it does not exist.
      *
-     * 🚨 One atomic upsert, never read-then-write. Two people liking the same
+     * 🚨 One atomic upsert, never read-then-write — the query builder's, so
+     * it is the right statement on every database Flarum runs on. Two people liking the same
      * post in the same second is the ordinary case on a busy forum, and a
      * select-then-update loses one of them silently — the kind of drift that is
      * invisible until someone's map disagrees with their post count and there
      * is no way left to tell which was right.
      *
-     * 🚨 `GREATEST(0, …)` because a delete can arrive for activity recorded
+     * 🚨 Floored at zero because a delete can arrive for activity recorded
      * before this extension was installed, and a negative count would render as
      * a hole in the map that no rebuild could explain.
      */
@@ -48,22 +50,35 @@ class Recorder
 
         $bucket = Carbon::instance(Carbon::parse($at))->utc()->startOfHour();
 
-        $this->db->statement(
-            'INSERT INTO '.$this->table().' (user_id, bucket, kind, count) VALUES (?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE count = GREATEST(0, CAST(count AS SIGNED) + ?)',
-            [$userId, $bucket->toDateTimeString(), $kind, max(0, $delta), $delta]
+        $this->db->table('cadence_activity')->upsert(
+            [['user_id' => $userId, 'bucket' => $bucket->toDateTimeString(), 'kind' => $kind, 'count' => max(0, $delta)]],
+            ['user_id', 'bucket', 'kind'],
+            ['count' => new Expression($this->adjusted($delta))]
         );
     }
 
     /**
-     * 🚨 The table name is built from the connection's own prefix rather than
-     * written literally, because this is raw SQL and Laravel does NOT apply the
-     * prefix to it. A forum with a table prefix — which is every forum sharing
-     * a database, and most one-click installs — would get "table does not
-     * exist" on the first post anyone made.
+     * The existing count moved by `$delta`, floored at zero.
+     *
+     * 🚨 Written so it never goes below zero on the way: the column is
+     * unsigned, and MySQL refuses `count - 1` on a 0 outright. A CASE rather
+     * than GREATEST(), which SQLite does not have.
+     *
+     * 🚨 Qualified with the table on PostgreSQL, where a bare column in ON
+     * CONFLICT DO UPDATE is ambiguous with EXCLUDED. `$delta` is an int, so
+     * writing it into the SQL is safe.
      */
-    private function table(): string
+    private function adjusted(int $delta): string
     {
-        return $this->db->getTablePrefix().'cadence_activity';
+        $grammar = $this->db->getQueryGrammar();
+        $count = $grammar->wrap('count');
+
+        if ($this->db->getDriverName() === 'pgsql') {
+            $count = $grammar->wrapTable('cadence_activity').'.'.$count;
+        }
+
+        return $delta > 0
+            ? "$count + $delta"
+            : "CASE WHEN $count < ".(-$delta)." THEN 0 ELSE $count - ".(-$delta).' END';
     }
 }

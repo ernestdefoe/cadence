@@ -118,8 +118,21 @@ class Rebuilder
         return $this->db->getQueryGrammar()->wrap($column);
     }
 
+    /**
+     * The start of the hour a timestamp falls in.
+     *
+     * 🚨 Per driver: DATE_FORMAT() is MySQL's alone, and it made this
+     * migration — and so enabling the extension — fail on SQLite and
+     * PostgreSQL, both of which Flarum supports.
+     */
     private function hour(string $column): string
     {
-        return 'DATE_FORMAT('.$this->col($column).", '%Y-%m-%d %H:00:00')";
+        $column = $this->col($column);
+
+        return match ($this->db->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m-%d %H:00:00', $column)",
+            'pgsql' => "date_trunc('hour', $column)",
+            default => "DATE_FORMAT($column, '%Y-%m-%d %H:00:00')",
+        };
     }
 }
