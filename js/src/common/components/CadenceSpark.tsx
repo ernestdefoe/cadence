@@ -36,9 +36,7 @@ export default class CadenceSpark extends Component<CadenceSparkAttrs> {
 
     const max = Math.max(...weeks);
 
-    const label = extractText(
-      app.translator.trans('ernestdefoe-cadence.forum.spark_label', { count: total })
-    );
+    const label = extractText(app.translator.trans('ernestdefoe-cadence.forum.spark_label', { count: total }));
 
     return m(
       'span.CadenceSpark',

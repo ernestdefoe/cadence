@@ -65,10 +65,7 @@ export default class CadenceMap extends Component<CadenceMapAttrs> {
 
     for (const date of Object.keys(days)) {
       const byKind = days[date];
-      const n =
-        this.kind === 'all'
-          ? Object.values(byKind).reduce((a, b) => a + b, 0)
-          : byKind[this.kind] || 0;
+      const n = this.kind === 'all' ? Object.values(byKind).reduce((a, b) => a + b, 0) : byKind[this.kind] || 0;
 
       if (n > 0) out[date] = n;
     }
