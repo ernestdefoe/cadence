@@ -159,6 +159,13 @@ class ActivitySubscriber
 
     public function reacted(PostWasReacted $event): void
     {
+        // 🚨 Swapping one reaction for another fires this again with no
+        // unreacted first: the same row, its reaction_id changed. That is not
+        // a second reaction.
+        if (($event->postReaction->getPrevious()['reaction_id'] ?? null) !== null) {
+            return;
+        }
+
         $this->onVisiblePost($event, Recorder::REACTION, 1);
     }
 
