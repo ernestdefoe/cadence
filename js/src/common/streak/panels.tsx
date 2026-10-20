@@ -296,8 +296,8 @@ export class FlameCard extends Component<{ data: CardData; user?: any; title?: s
               <div className="FlameCard-rival">
                 <Icon name="fas fa-flag" />{' '}
                 {rival.ahead > 0
-                  ? app.translator.trans('ernestdefoe-cadence.forum.streak.rival_ahead', { user: miniUser(rival.user), count: rival.ahead })
-                  : app.translator.trans('ernestdefoe-cadence.forum.streak.rival_level', { user: miniUser(rival.user) })}
+                  ? app.translator.trans('ernestdefoe-cadence.forum.streak.rival_ahead', { member: miniUser(rival.user), count: rival.ahead })
+                  : app.translator.trans('ernestdefoe-cadence.forum.streak.rival_level', { member: miniUser(rival.user) })}
               </div>
             ) : null}
           </div>

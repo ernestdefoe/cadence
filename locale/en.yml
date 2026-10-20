@@ -57,8 +57,10 @@ ernestdefoe-cadence:
       top_tier: The highest tier there is. Keep it burning.
       rank: "Rank #{rank}"
       started: "Started {date}"
-      rival_ahead: "{user} is {count, plural, one {# day} other {# days}} ahead of you."
-      rival_level: "{user} is level with you. Keep going to pass them."
+      # 🚨 {member}, never {user}: Flarum's translator treats a `user` parameter
+      # as a User model and calls .displayName() on it, which crashed the card.
+      rival_ahead: "{member} is {count, plural, one {# day} other {# days}} ahead of you."
+      rival_level: "{member} is level with you. Keep going to pass them."
       longest: Longest streak
       total_days: Total days
       freezes: Freezes
