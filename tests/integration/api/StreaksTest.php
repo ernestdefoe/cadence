@@ -85,6 +85,7 @@ class StreaksTest extends TestCase
             'total_days' => $length,
             'started_on' => Carbon::parse($last)->subDays($length - 1)->toDateString(),
             'last_day' => $last,
+            'day_ends_at' => Carbon::parse($last, 'UTC')->endOfDay()->toDateTimeString(),
             'freezes' => $freezes,
             'timezone' => 'UTC',
             'alive_until' => Carbon::parse($last, 'UTC')->addDays(1 + $freezes)->endOfDay()->toDateTimeString(),
@@ -319,5 +320,32 @@ class StreaksTest extends TestCase
 
         [, $mine] = $this->json('GET', '/api/cadence/streaks/3', 3, null, ['month' => Carbon::now('UTC')->format('Y-m')]);
         $this->assertNotEmpty($mine['data']['journal']);
+    }
+
+    #[Test]
+    public function changing_timezone_neither_adds_a_day_nor_moves_the_deadline()
+    {
+        $this->app();
+        // Fed today in UTC, at noon.
+        $noon = Carbon::now('UTC')->setTime(12, 0);
+        $this->flame(2, 10, 0);
+        $before = $this->row(2);
+        $flames = $this->app()->getContainer()->make(Flames::class);
+
+        // Hop to UTC+14, where it is already tomorrow, and post: still today.
+        $flames->setTimezone(2, 'Pacific/Kiritimati');
+        $flames->feed(2, true, $noon);
+        $this->assertSame(10, (int) $this->row(2)->current, 'Tomorrow does not arrive early');
+        $this->assertSame($before->alive_until, $this->row(2)->alive_until, 'The deadline did not move');
+
+        // Hop to UTC-11 early in the UTC day, where it is still yesterday.
+        $flames->setTimezone(2, 'Pacific/Pago_Pago');
+        $flames->feed(2, true, Carbon::now('UTC')->setTime(5, 0));
+        $this->assertSame(10, (int) $this->row(2)->current, 'Yesterday cannot shrink or re-feed it');
+        $this->assertSame($before->alive_until, $this->row(2)->alive_until);
+
+        // Once the UTC day has really ended, tomorrow counts in any zone.
+        $flames->feed(2, true, Carbon::now('UTC')->addDay()->setTime(12, 0));
+        $this->assertSame(11, (int) $this->row(2)->current);
     }
 }

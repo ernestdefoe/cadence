@@ -139,6 +139,7 @@ class StreakRebuilder
         $row->current = $length([$first, $last]);
         $row->started_on = $first;
         $row->last_day = $last;
+        $row->day_ends_at = Carbon::parse($last, $tz)->endOfDay()->utc();
         $row->longest = $longest;
         $row->total_days = count($days);
 

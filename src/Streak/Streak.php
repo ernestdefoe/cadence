@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $total_days
  * @property string|null $started_on
  * @property string|null $last_day
+ * @property Carbon|null $day_ends_at
  * @property Carbon|null $alive_until
  * @property Carbon|null $fed_at
  * @property int $freezes
@@ -44,6 +45,7 @@ class Streak extends AbstractModel
         'alive_until' => 'datetime',
         'fed_at' => 'datetime',
         'embers_until' => 'datetime',
+        'day_ends_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

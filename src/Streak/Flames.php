@@ -77,8 +77,17 @@ class Flames
             $tz = $this->tz($row);
             $today = $now->copy()->setTimezone($tz)->toDateString();
 
-            // The ordinary case: already fed today. One indexed read, no write.
-            if ($row && $row->last_day === $today) {
+            /*
+             * Already fed "today" — the ordinary case, one indexed read and no
+             * write. 🚨 Judged by the instant the last fed day really ended,
+             * not only by the date: a member who switches to a timezone ahead
+             * of theirs reaches "tomorrow" early, and one who switches behind
+             * is back in "yesterday". Neither is a new day.
+             */
+            $fedToday = $row && $row->last_day !== null
+                && ($today <= $row->last_day || ($row->day_ends_at && $now->lt($row->day_ends_at)));
+
+            if ($fedToday) {
                 if (! $contribution || ! $row->hasEmbers($now)) {
                     return [];
                 }
@@ -101,9 +110,9 @@ class Flames
 
             $events = $this->settle($row, $now);
 
-            if ($row->last_day === $today) {
+            if ($fedToday) {
                 // Only here because embers are glowing and this is a post.
-                $events = array_merge($events, $this->revive($row, $today, $now));
+                $events = array_merge($events, $this->revive($row, $row->last_day, $now));
             } else {
                 $events = array_merge($events, $this->advance($row, $today, $contribution, $now));
             }
@@ -219,6 +228,7 @@ class Flames
 
         $row->current = $new;
         $row->last_day = $today;
+        $row->day_ends_at = $this->endOf($row, $today);
         $row->total_days = $row->total_days + 1;
         $row->fed_at = $now;
 
@@ -311,7 +321,16 @@ class Flames
 
         $slack = 1 + $this->rules->grace() + $row->freezes;
 
-        $row->alive_until = Carbon::parse($row->last_day, $this->tz($row))->addDays($slack)->endOfDay()->utc();
+        // Counted from the fixed end of the last fed day, so a later timezone
+        // change cannot stretch (or cut) the deadline. Whole days of 24 hours.
+        $ends = $row->day_ends_at ? Carbon::instance($row->day_ends_at)->utc() : $this->endOf($row, $row->last_day);
+        $row->alive_until = $ends->copy()->addHours(24 * $slack);
+    }
+
+    /** The UTC instant a local date ends, in the member's current timezone. */
+    public function endOf(Streak $row, string $date): Carbon
+    {
+        return Carbon::parse($date, $this->tz($row))->endOfDay()->utc();
     }
 
     public function tz(?Streak $row): string
@@ -335,9 +354,10 @@ class Flames
                 return;
             }
 
+            // Only the zone changes: the last fed day's end, and so the
+            // deadline, stay where they were (see feed()).
             if ($row->timezone !== $tz) {
                 $row->timezone = $tz;
-                $this->refresh($row);
                 $row->save();
             }
         });
@@ -433,6 +453,7 @@ class Flames
         $row->current = $length;
         $row->started_on = $length > 0 ? CarbonImmutable::parse($today)->subDays($length - 1)->toDateString() : null;
         $row->last_day = $length > 0 ? $today : $row->last_day;
+        $row->day_ends_at = $length > 0 ? $this->endOf($row, $today) : $row->day_ends_at;
         $row->longest = max($row->longest, $length);
     }
 
