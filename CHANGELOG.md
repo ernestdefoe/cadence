@@ -2,6 +2,15 @@
 
 Cadence — see a member's rhythm, not just their volume.
 
+## [1.2.1] — 2026-10-20
+
+### Fixed
+
+- **Updating from 1.1.x failed** with "Unknown column 'day_ends_at'": the
+  history rebuild ran before the migration that adds the column it writes.
+  The column now comes with the streaks table; forums already on 1.2.0 get it
+  added as before.
+
 ## [1.2.0] — 2026-10-20
 
 ### Added

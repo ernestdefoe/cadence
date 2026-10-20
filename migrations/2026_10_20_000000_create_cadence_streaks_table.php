@@ -28,6 +28,9 @@ return Migration::createTable('cadence_streaks', function (Blueprint $table) {
     $table->date('started_on')->nullable();
     $table->date('last_day')->nullable();
 
+    // The instant the last fed day really ended; see the day_ends_at migration.
+    $table->dateTime('day_ends_at')->nullable();
+
     $table->dateTime('alive_until')->nullable();
     $table->dateTime('fed_at')->nullable();
 
