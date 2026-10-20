@@ -74,26 +74,26 @@ class StreakRebuilder
             ->orderBy('user_id')->orderBy('bucket')
             ->cursor();
 
-        $flush = function () use (&$userId, &$days, &$members, $saved, $timezones, $default, $grace, $hallMin, $now) {
-            if ($userId !== null && $days) {
-                $days += $saved[$userId] ?? [];
-                $this->store($userId, array_keys($days), $timezones[$userId] ?? $default, $grace, $hallMin, $now);
-                $members++;
-            }
-            $days = [];
-        };
+        $tzOf = fn (int $id) => Rules::validTimezone($timezones[$id] ?? null) ?? $default;
 
         foreach ($cursor as $row) {
-            if ((int) $row->user_id !== $userId) {
-                $flush();
-                $userId = (int) $row->user_id;
+            $id = (int) $row->user_id;
+
+            // The cursor is ordered by member: a new id means the last is done.
+            if ($id !== $userId && $userId !== null) {
+                $this->store($userId, array_keys($days + ($saved[$userId] ?? [])), $tzOf($userId), $grace, $hallMin, $now);
+                $members++;
+                $days = [];
             }
 
-            $tz = Rules::validTimezone($timezones[$userId] ?? null) ?? $default;
-            $days[Carbon::parse($row->bucket, 'UTC')->setTimezone($tz)->toDateString()] = true;
+            $userId = $id;
+            $days[Carbon::parse($row->bucket, 'UTC')->setTimezone($tzOf($id))->toDateString()] = true;
         }
 
-        $flush();
+        if ($userId !== null) {
+            $this->store($userId, array_keys($days + ($saved[$userId] ?? [])), $tzOf($userId), $grace, $hallMin, $now);
+            $members++;
+        }
 
         return $members;
     }

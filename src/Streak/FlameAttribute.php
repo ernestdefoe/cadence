@@ -83,11 +83,11 @@ abstract class FlameAttribute
 
         return [
             'current' => $row?->burning($now) ?? 0,
-            'longest' => $row?->longest ?? 0,
-            'total' => $row?->total_days ?? 0,
+            'longest' => $row->longest ?? 0,
+            'total' => $row->total_days ?? 0,
             'startedOn' => $row?->isAlight($now) ? $row->started_on : null,
             'lastDay' => $row?->last_day,
-            'freezes' => $row?->freezes ?? 0,
+            'freezes' => $row->freezes ?? 0,
             'embers' => $row?->hasEmbers($now) ? $row->embers : 0,
             'embersUntil' => $row?->hasEmbers($now) ? $row->embers_until->toIso8601String() : null,
             'aliveUntil' => $row?->isAlight($now) ? $row->alive_until->toIso8601String() : null,

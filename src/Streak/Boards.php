@@ -54,7 +54,7 @@ class Boards
                     'user' => $users[$row->user_id],
                     'value' => (int) $row->value,
                     'current' => $streak?->burning($now) ?? 0,
-                    'longest' => $streak?->longest ?? (int) $row->value,
+                    'longest' => $streak->longest ?? (int) $row->value,
                     'when' => Carbon::parse($row->created_at, 'UTC')->toIso8601String(),
                 ];
             }
