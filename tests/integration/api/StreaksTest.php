@@ -209,6 +209,15 @@ class StreaksTest extends TestCase
         $this->assertSame(Carbon::now('Australia/Sydney')->toDateString(), $this->row(2)->last_day, "The member's own day");
         $this->assertSame(1, $this->database()->table('cadence_activity')->where('user_id', 2)->where('kind', 'visit')->count());
 
+        // Others see the visit day only while the member discloses being online.
+        [, $theirs] = $this->json('GET', '/api/cadence/streaks/2', 3, null, ['month' => Carbon::now('Australia/Sydney')->format('Y-m')]);
+        $this->assertNotEmpty($theirs['data']['days']);
+        $this->database()->table('users')->where('id', 2)->update(['preferences' => json_encode(['discloseOnline' => false])]);
+        [, $theirs] = $this->json('GET', '/api/cadence/streaks/2', 3, null, ['month' => Carbon::now('Australia/Sydney')->format('Y-m')]);
+        $this->assertSame([], $theirs['data']['days'], 'A hidden online status hides visit days');
+        [, $mine] = $this->json('GET', '/api/cadence/streaks/2', 2, null, ['month' => Carbon::now('Australia/Sydney')->format('Y-m')]);
+        $this->assertNotEmpty($mine['data']['days'], 'The member still sees their own');
+
         // A visit is not activity: the map does not draw it.
         [, $map] = $this->json('GET', '/api/cadence/2', 2);
         $this->assertSame([], $map['data']['days']);

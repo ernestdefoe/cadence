@@ -69,7 +69,13 @@ class MemberController implements RequestHandlerInterface
             'today' => $now->toDateString(),
             'firstYear' => $user->joined_at ? max(2000, (int) Carbon::instance($user->joined_at)->setTimezone($tz)->year) : $now->year,
             'standing' => $this->boards->standing($row, $actor),
-            'days' => $this->boards->days($row, $user->id, $tz, $from, $to),
+            /*
+             * 🚨 In visit mode a fed day is a day they were HERE. A member who
+             * hid their online status ("discloseOnline" off) has said when they
+             * visit is nobody else's business, so others see only the days they
+             * contributed. Their own flame still counts every visit.
+             */
+            'days' => $this->boards->days($row, $user->id, $tz, $from, $to, $own || (bool) $user->getPreference('discloseOnline')),
         ];
 
         if ($own) {

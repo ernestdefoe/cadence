@@ -155,9 +155,10 @@ class Boards
      *
      * @return array<string, int>
      */
-    public function days(Streak|null $row, int $userId, string $tz, Carbon $from, Carbon $to): array
+    public function days(Streak|null $row, int $userId, string $tz, Carbon $from, Carbon $to, bool $visits = true): array
     {
-        $kinds = $this->rules->mode() === 'visit' ? [] : [Recorder::VISIT];
+        // Visits only in visit mode, and only when the member lets it be seen.
+        $kinds = $this->rules->mode() === 'visit' && $visits ? [] : [Recorder::VISIT];
 
         $buckets = $this->db->table('cadence_activity')
             ->where('user_id', $userId)
