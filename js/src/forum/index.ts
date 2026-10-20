@@ -15,7 +15,9 @@ import Select from 'flarum/common/components/Select';
 import { flameOf, streaksOn, t as st } from '../common/streak/flame';
 import { FlameBadge } from '../common/streak/components';
 import FlameButton from './streak/FlameButton';
-import { checkIn } from './streak/celebrate';
+import { afterContribution, checkIn } from './streak/celebrate';
+import Post from 'flarum/common/models/Post';
+import Discussion from 'flarum/common/models/Discussion';
 import { hasFofWidgets, MyFlameWidget, registerWidgets, TopFlamesWidget } from './streak/widgets';
 import { StreakMomentNotification, StreakWarningNotification } from './streak/notifications';
 
@@ -184,6 +186,14 @@ function registerStreaks() {
   extend(app, 'mount', function () {
     if (streaksOn()) checkIn();
   });
+
+  // A reply, a new discussion or a like may have fed the flame just now.
+  const fed = function (this: any, saving: Promise<unknown>) {
+    if (!streaksOn() || !app.session.user) return;
+    saving?.then?.(() => afterContribution()).catch?.(() => {});
+  };
+  extend(Post.prototype, 'save', fed);
+  extend(Discussion.prototype, 'save', fed);
 
   // After sibling extensions (Bespoke) have set up their registries.
   setTimeout(() => {

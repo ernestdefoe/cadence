@@ -280,7 +280,9 @@ export class FlameCard extends Component<{ data: CardData; user?: any; title?: s
     if (d.standing?.rank) meta.push(t('rank', { rank: d.standing.rank }));
     if (d.startedOn) meta.push(t('started', { date: fmt.format(new Date(d.startedOn + 'T12:00:00')) }));
 
-    const rival = d.standing?.rival;
+    // The rival is a nudge for the member themselves; on anyone else's card
+    // "X is 284 days ahead of you" would be about the wrong person.
+    const rival = d.own ? d.standing?.rival : null;
 
     return (
       <div className="FlameCard" style={flameStyle(look.color)}>

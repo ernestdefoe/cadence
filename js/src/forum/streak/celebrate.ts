@@ -49,7 +49,7 @@ export function celebrate(flame: OwnFlame | null = ownFlame()): void {
  * from the one stored — once, ever, for most members. In visit mode it is the
  * day's first page. Every other page load sends nothing.
  */
-export function checkIn(): void {
+export function checkIn(force = false): void {
   const user = app.session.user;
   if (!user || !app.forum.attribute('canEarnStreaks') || !rules()) return;
 
@@ -58,7 +58,7 @@ export function checkIn(): void {
   const needsVisit = rules()!.mode === 'visit' && flame?.lastDay !== localToday();
   const needsZone = !!tz && flame?.timezone !== tz;
 
-  if (!needsVisit && !needsZone) {
+  if (!force && !needsVisit && !needsZone) {
     celebrate(flame);
     return;
   }
@@ -72,6 +72,30 @@ export function checkIn(): void {
       m.redraw();
     })
     .catch(() => {});
+}
+
+/**
+ * After the member saves a post (a reply, a new discussion, a like): if that
+ * could have fed the flame — the first of their day, or a post while embers
+ * glow — read the fresh flame back so the header and the toast catch up on
+ * this page, not the next one.
+ *
+ * 🚨 Needed because stock Flarum's post responses do not include the author,
+ * so nothing else brings the new flame back. Every later save that day sends
+ * nothing.
+ */
+export function afterContribution(): void {
+  const flame = ownFlame();
+
+  // The save's own response usually brings the fresh flame back (it includes
+  // the author); show its moments now rather than at the next redraw.
+  if (flame && flame.lastDay === localToday() && !flame.embers) {
+    celebrate(flame);
+    m.redraw();
+    return;
+  }
+
+  checkIn(true);
 }
 
 /** Keep both halves of the session member's flame in step. */
