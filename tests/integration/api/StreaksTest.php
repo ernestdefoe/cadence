@@ -104,6 +104,8 @@ class StreaksTest extends TestCase
         foreach ([0, 1, 2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17] as $daysAgo) {
             $rows[] = ['user_id' => 4, 'bucket' => Carbon::now('UTC')->subDays($daysAgo)->setTime(12, 0)->toDateTimeString(), 'kind' => 'reply', 'count' => 1];
         }
+        // A member whose account is gone; their activity stays behind.
+        $rows[] = ['user_id' => 99, 'bucket' => Carbon::now('UTC')->setTime(12, 0)->toDateTimeString(), 'kind' => 'reply', 'count' => 1];
         $this->prepareDatabase(['cadence_activity' => $rows]);
         $this->app()->getContainer()->make(StreakRebuilder::class)->rebuild();
 
@@ -112,6 +114,7 @@ class StreaksTest extends TestCase
         $this->assertSame(9, (int) $row->longest, 'The earlier nine-day run');
         $this->assertSame(14, (int) $row->total_days);
         $this->assertSame(['ended' => 9], $this->journal(4), 'The ended run is in the Hall of Flames');
+        $this->assertNull($this->row(99), 'A deleted account is skipped, not fatal');
     }
 
     #[Test]

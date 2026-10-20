@@ -47,7 +47,7 @@ class OverviewController implements RequestHandlerInterface
 
         $events = $this->db->table('cadence_streak_journal')
             ->orderByDesc('created_at')->orderByDesc('id')->limit(25)
-            ->get(['user_id', 'type', 'value', 'actor_id', 'created_at']);
+            ->get(['user_id', 'type', 'value', 'data', 'actor_id', 'created_at']);
         $users = $this->boards->users($events->pluck('user_id')->merge($events->pluck('actor_id'))->filter()->unique()->all());
 
         $stats = $this->boards->stats();
@@ -69,6 +69,7 @@ class OverviewController implements RequestHandlerInterface
                 'actor' => $e->actor_id ? ($users[$e->actor_id] ?? null) : null,
                 'type' => $e->type,
                 'value' => (int) $e->value,
+                'data' => $e->data ? json_decode($e->data, true) : null,
                 'at' => Carbon::parse($e->created_at, 'UTC')->toIso8601String(),
             ])->all(),
         ]]);

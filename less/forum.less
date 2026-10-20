@@ -138,3 +138,587 @@ button.CadenceMap-day {
   border-radius: 1px;
   opacity: 0.75;
 }
+
+/* ======================================================================
+ * Streaks
+ *
+ * 🚨 Every flame colour arrives as `--flame` from the tier (or season), and
+ * everything else is the theme's own variables — so a dark theme, Bespoke or a
+ * hand-built one all get a flame that belongs to them.
+ * ==================================================================== */
+
+@import "flame-badge.less";
+
+.UserCard-cadenceStreak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  .FlameBadge { margin-left: 0; }
+}
+
+/* ---- the header flame ---- */
+
+.FlameDropdown-button { padding-left: 10px; padding-right: 10px; }
+
+.FlameDropdown-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--flame);
+  font-weight: 700;
+}
+
+.FlameDropdown.is-out .FlameDropdown-label { color: var(--muted-color); }
+
+/* Not fed yet today: the flame flickers, quietly. */
+.FlameDropdown.is-at-risk .FlameDropdown-label .icon {
+  animation: FlameFlicker 2.4s ease-in-out infinite;
+}
+
+@keyframes FlameFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .FlameDropdown.is-at-risk .FlameDropdown-label .icon { animation: none; opacity: 0.6; }
+}
+
+.FlameDropdown-menu {
+  width: 320px;
+  max-width: calc(100vw - 20px);
+  padding: 0;
+
+  > li.FlameDropdown-panel { padding: 0; }
+  .LoadingIndicator { margin: 24px auto; }
+}
+
+.FlamePanelMini {
+  padding: 0 0 6px;
+
+  .FlameProgress, .FlameCalendar, .FlamePanelMini-risk { margin: 10px 14px 0; }
+}
+
+.FlamePanelMini-head {
+  padding: 12px 14px;
+  font-weight: 600;
+  color: var(--heading-color);
+  border-bottom: 1px solid var(--control-bg);
+}
+
+.FlamePanelMini-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 0;
+
+  .FlamePanelMini-side {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 12px;
+    color: var(--muted-color);
+  }
+}
+
+.FlamePanelMini-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--flame);
+  background: color-mix(in srgb, var(--flame) 15%, transparent);
+  font-size: 18px;
+}
+
+.FlamePanelMini-tier { font-size: 12px; color: var(--muted-color); }
+
+.FlamePanelMini-risk {
+  font-size: 12px;
+  color: var(--flame);
+  font-weight: 600;
+}
+
+.FlamePanelMini-links {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  border-top: 1px solid var(--control-bg);
+  padding-top: 4px;
+
+  > a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    color: var(--text-color);
+    text-decoration: none;
+
+    &:hover, &:focus-visible { background: var(--control-bg); }
+  }
+}
+
+/* ---- progress toward the next tier ---- */
+
+.FlameProgress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--control-bg);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--flame, var(--primary-color));
+  }
+}
+
+.FlameProgress-label {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted-color);
+}
+
+.FlameProgress.is-top { font-size: 12px; color: var(--muted-color); }
+
+/* ---- the ring ---- */
+
+.FlameRing {
+  position: relative;
+  flex: none;
+
+  svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  circle { fill: none; stroke-width: 3; }
+  .FlameRing-track { stroke: var(--control-bg); }
+  .FlameRing-arc { stroke: var(--flame); stroke-linecap: round; }
+}
+
+.FlameRing--glow svg { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flame) 60%, transparent)); }
+
+.FlameRing-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+
+  .icon { color: var(--flame); font-size: 12px; }
+  strong { font-size: 22px; color: var(--heading-color); }
+  small { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-color); }
+}
+
+/* ---- the card ---- */
+
+.FlameCard {
+  background: var(--body-bg);
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.FlameCard-main { display: flex; gap: 16px; align-items: center; }
+.FlameCard-body { flex: 1; min-width: 0; }
+
+.FlameCard-kicker { font-size: 12px; color: var(--muted-color); }
+
+.FlameCard-tier {
+  margin: 2px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--flame);
+}
+
+.FlameCard-occasion { font-size: 12px; font-weight: 600; color: var(--flame); }
+.FlameCard-meta { font-size: 12px; color: var(--muted-color); margin-bottom: 8px; }
+.FlameCard .FlameProgress { max-width: 360px; }
+
+.FlameCard-rival {
+  margin-top: 8px;
+  font-size: 13px;
+  .icon { color: var(--flame); }
+  .FlameUser { vertical-align: middle; }
+}
+
+.FlameCard-embers {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--border-radius);
+  background: color-mix(in srgb, #f59e0b 10%, transparent);
+  font-size: 13px;
+
+  > .icon { color: #f59e0b; margin-top: 3px; }
+}
+
+.FlameCard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--control-bg);
+
+  dt { font-size: 12px; color: var(--muted-color); font-weight: normal; }
+  dd { margin: 0; font-size: 17px; font-weight: 700; color: var(--heading-color); }
+  dd .icon { color: #38bdf8; font-size: 13px; }
+  > div:last-child { text-align: right; }
+}
+
+/* ---- calendar + year ---- */
+
+.FlameCalendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.FlameCalendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+}
+
+.FlameCalendar-dow { font-size: 11px; color: var(--muted-color); padding-bottom: 2px; }
+
+.FlameCalendar-day {
+  font-size: 12px;
+  line-height: 28px;
+  border-radius: 5px;
+  color: var(--text-color);
+  background: var(--control-bg);
+
+  &.is-blank { background: transparent; }
+  &.is-future { background: transparent; color: var(--muted-color); }
+  &.is-fed { background: color-mix(in srgb, var(--flame) 28%, transparent); color: var(--heading-color); font-weight: 600; }
+  &.is-saved { background: color-mix(in srgb, #38bdf8 30%, transparent); font-weight: 600; }
+  &.is-today { box-shadow: inset 0 0 0 2px var(--heading-color); }
+}
+
+.FlameYear-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted-color);
+}
+
+.FlameYear-years { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.FlameYear-tab {
+  border: 0;
+  border-radius: var(--border-radius);
+  padding: 2px 8px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--muted-color);
+  cursor: pointer;
+
+  &.is-active { background: var(--control-bg); color: var(--heading-color); }
+}
+
+.FlameYear-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.FlameYear-week { display: grid; grid-template-rows: repeat(7, 11px); gap: 3px; flex: none; }
+
+.FlameYear-day {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--control-bg);
+  vertical-align: middle;
+
+  &.is-blank, &.is-future { background: transparent; }
+  &.is-future { box-shadow: inset 0 0 0 1px var(--control-bg); }
+  &.is-fed { background: var(--flame); }
+  &.is-saved { background: #38bdf8; }
+}
+
+.FlameYear-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted-color);
+}
+
+/* ---- journal ---- */
+
+.FlameJournal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.FlameJournal-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--control-bg);
+
+  > .icon {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--control-bg);
+    color: var(--muted-color);
+    font-size: 12px;
+  }
+
+  time { font-size: 12px; color: var(--muted-color); }
+}
+
+.FlameJournal-item--saved > .icon { color: #38bdf8; }
+.FlameJournal-item--milestone > .icon,
+.FlameJournal-item--tier > .icon,
+.FlameJournal-item--record > .icon,
+.FlameJournal-item--revived > .icon { color: #f97316; }
+
+.FlameJournal-empty { color: var(--muted-color); }
+
+/* ---- profile tab ---- */
+
+.FlamePanel-section {
+  margin-bottom: 20px;
+  h4 { margin: 0 0 10px; font-size: 14px; color: var(--heading-color); }
+}
+
+.FlamePanel-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+
+  @media (max-width: 767px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.FlameUser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--heading-color);
+  font-weight: 600;
+  min-width: 0;
+
+  .Avatar { --size: 22px; width: 22px; height: 22px; font-size: 11px; line-height: 22px; }
+  .FlameUser-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ---- the leaderboard ---- */
+
+.StreaksPage { padding: 20px 0 40px; }
+
+.StreaksPage-hero {
+  margin-bottom: 18px;
+  h2 { margin: 0 0 4px; .icon { color: #f97316; } }
+  p { margin: 0; color: var(--muted-color); }
+}
+
+.StreaksPage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+
+  @media (max-width: 991px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.StreaksPage-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--control-bg);
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+
+.StreaksPage-tab {
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  color: var(--muted-color);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &.is-active { color: var(--heading-color); border-bottom-color: var(--primary-color); }
+  &:focus-visible { outline: 2px solid var(--link-color); }
+}
+
+.StreaksPage-note, .StreaksPage-empty { color: var(--muted-color); font-size: 13px; }
+.StreaksPage-more { text-align: center; margin-top: 14px; }
+
+.StreaksBoard {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.StreaksBoard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--control-bg);
+
+  &.is-me { background: color-mix(in srgb, var(--primary-color) 8%, transparent); border-radius: var(--border-radius); }
+}
+
+.StreaksBoard-rank {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--muted-color);
+
+  .is-top-1 & { background: color-mix(in srgb, #f59e0b 25%, transparent); color: var(--heading-color); }
+  .is-top-2 & { background: color-mix(in srgb, #94a3b8 25%, transparent); color: var(--heading-color); }
+  .is-top-3 & { background: color-mix(in srgb, #b45309 22%, transparent); color: var(--heading-color); }
+}
+
+.StreaksBoard-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.StreaksBoard-status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--flame);
+  margin-left: 28px;
+}
+
+.StreaksBoard-value {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+
+  .FlameBadge { font-size: 15px; height: 26px; line-height: 26px; padding: 0 9px; border-radius: 13px; }
+  small { color: var(--muted-color); font-size: 11px; }
+}
+
+.StreaksSide {
+  background: var(--body-bg);
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+
+  h4 { margin: 0 0 10px; font-size: 14px; color: var(--heading-color); .icon { color: #f97316; } }
+}
+
+.StreaksSide-figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+
+  dt { font-size: 11px; color: var(--muted-color); font-weight: normal; }
+  dd { margin: 0; font-size: 18px; font-weight: 700; color: var(--heading-color); }
+}
+
+.StreaksTiers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .icon { color: var(--flame); width: 16px; text-align: center; }
+  small { margin-left: auto; color: var(--muted-color); }
+  .has-glow .icon { filter: drop-shadow(0 0 4px var(--flame)); }
+}
+
+.StreaksHow { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted-color); li { margin-bottom: 4px; } }
+
+.StreaksBonfire-body { display: flex; gap: 12px; align-items: center; > div:last-child { flex: 1; } }
+.StreaksBonfire-count { font-size: 22px; color: var(--heading-color); }
+.StreaksBonfire .FlameProgress-bar { --flame: #f97316; margin: 6px 0 2px; }
+.StreaksBonfire small { color: var(--muted-color); font-size: 11px; }
+
+.StreaksBonfire-fire {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #f97316 14%, transparent);
+  color: #f97316;
+  font-size: 18px;
+
+  &.is-level-1 { font-size: 22px; }
+  &.is-level-2 { font-size: 26px; }
+  &.is-level-3 { font-size: 30px; filter: drop-shadow(0 0 6px #f97316); }
+  &.is-level-4 { font-size: 34px; filter: drop-shadow(0 0 10px #f59e0b); color: #f59e0b; }
+}
+
+/* ---- widgets ---- */
+
+.FlameWidget {
+  font-size: 13px;
+
+  .FlameProgress { margin-top: 8px; }
+}
+
+.FlameWidget-title { margin: 0 0 10px; font-size: 14px; color: var(--heading-color); }
+.FlameWidget-mine { display: flex; align-items: center; gap: 10px; }
+
+.FlameWidget-figures {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  margin: 10px 0 0;
+
+  dt { color: var(--muted-color); font-weight: normal; }
+  dd { margin: 0; font-weight: 700; }
+}
+
+.FlameWidget-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  li.is-me .FlameUser-name { color: var(--primary-color); }
+  .FlameUser { flex: 1; }
+}
+
+.FlameWidget-rank { width: 18px; text-align: center; color: var(--muted-color); font-weight: 700; }
+.FlameWidget-link { padding-left: 0; margin-top: 6px; }
+.FlameWidget--bonfire .StreaksSide { border: 0; padding: 0; margin: 0; background: transparent; }
+
+/* The stock-sidebar fallback sits under the index nav like any block. */
+.IndexPage-nav .item-cadenceMyFlame,
+.IndexPage-nav .item-cadenceTopFlames {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--border-radius);
+  background: var(--control-bg);
+}

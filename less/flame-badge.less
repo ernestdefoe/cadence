@@ -1,0 +1,30 @@
+/* The flame after a name — shared by the forum and the admin's tier preview. */
+
+.FlameBadge {
+  --flame: #f97316;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 5px;
+  padding: 0 6px;
+  height: 18px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  vertical-align: middle;
+  color: var(--flame);
+  background: color-mix(in srgb, var(--flame) 14%, transparent);
+  white-space: nowrap;
+
+  .icon { font-size: 10px; }
+
+  &.is-out {
+    color: var(--muted-color);
+    background: var(--control-bg);
+    font-weight: 500;
+  }
+}
+
+.FlameBadge--glow { box-shadow: 0 0 8px color-mix(in srgb, var(--flame) 45%, transparent); }
+

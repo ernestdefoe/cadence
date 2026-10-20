@@ -69,6 +69,8 @@ class StreakRebuilder
             ->select(['user_id', 'bucket'])
             ->when($kinds, fn ($q) => $q->whereNotIn('kind', $kinds))
             ->where('count', '>', 0)
+            // Only members who still exist; see store().
+            ->whereIn('user_id', fn ($q) => $q->from('users')->select('id'))
             ->orderBy('user_id')->orderBy('bucket')
             ->cursor();
 
@@ -121,6 +123,17 @@ class StreakRebuilder
 
         $this->db->table('cadence_streaks')->insertOrIgnore(['user_id' => $userId]);
         $row = Streak::query()->find($userId);
+
+        /*
+         * 🚨 Activity outlives accounts — `cadence_activity` has no foreign key,
+         * so a deleted member's buckets are still there — while a flame's row
+         * does, and the insert above is quietly ignored for them. Found on the
+         * dev forum, where it killed the install migration without a word. The
+         * cursor already skips them; this is the belt to its braces.
+         */
+        if (! $row) {
+            return;
+        }
 
         [$first, $last] = end($runs);
         $row->current = $length([$first, $last]);

@@ -111,7 +111,18 @@ class Flames
             $this->celebrate($row, $events);
             $row->save();
 
-            $notify = array_values(array_filter($events, fn ($e) => $e['type'] !== 'day'));
+            /*
+             * 🚨 ONE alert per feed, the moment that matters most. Posting runs
+             * inside NotificationSyncer::onePerUser(), which silently drops a
+             * member's second notification in the same request — so a
+             * milestone and a tier reached by one reply would have arrived as
+             * whichever happened to be synced first. The toast still shows them
+             * all; the alert list gets the headline.
+             */
+            $rank = ['tier' => 5, 'record' => 4, 'milestone' => 3, 'revived' => 2, 'saved' => 1];
+            $notify = array_filter($events, fn ($e) => isset($rank[$e['type']]));
+            usort($notify, fn ($a, $b) => $rank[$b['type']] <=> $rank[$a['type']]);
+            $notify = array_slice($notify, 0, 1);
 
             return $events;
         });

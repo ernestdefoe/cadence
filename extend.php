@@ -32,6 +32,9 @@ return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
         ->css(__DIR__.'/less/forum.less')
+        // 🚨 Publishes the lazy chunks (leaderboard, profile tab, header menu).
+        // Without it they build fine and 404 on the forum.
+        ->jsDirectory(__DIR__.'/js/dist/forum')
         // So a pasted leaderboard link loads. The profile's Streak tab rides
         // on core's own /u/{username}/{filter} route.
         ->route('/streaks', 'cadence.streaks'),
@@ -39,7 +42,8 @@ return [
     (new Extend\View())->namespace('ernestdefoe-cadence', __DIR__.'/views'),
 
     (new Extend\Frontend('admin'))
-        ->js(__DIR__.'/js/dist/admin.js'),
+        ->js(__DIR__.'/js/dist/admin.js')
+        ->css(__DIR__.'/less/admin.less'),
 
     new Extend\Locales(__DIR__.'/locale'),
 
@@ -175,5 +179,18 @@ return [
         ->default('ernestdefoe-cadence.streak_in_header', true)
         ->default('ernestdefoe-cadence.streak_on_profile', true)
         ->default('ernestdefoe-cadence.streak_sidebar', false)
-        ->default('ernestdefoe-cadence.streak_nav', true),
+        ->default('ernestdefoe-cadence.streak_nav', true)
+        // Shown in the admin as the values Rules falls back to anyway.
+        ->default('ernestdefoe-cadence.streak_grace', 0)
+        ->default('ernestdefoe-cadence.streak_milestones', Rules::DEFAULT_MILESTONES)
+        ->default('ernestdefoe-cadence.streak_freeze_per_milestone', 1)
+        ->default('ernestdefoe-cadence.streak_freeze_bank', 5)
+        ->default('ernestdefoe-cadence.streak_embers_min', 14)
+        ->default('ernestdefoe-cadence.streak_embers_hours', 48)
+        ->default('ernestdefoe-cadence.streak_embers_share', 50)
+        ->default('ernestdefoe-cadence.streak_hall_min', 7)
+        ->default('ernestdefoe-cadence.streak_risk_min', 3)
+        ->default('ernestdefoe-cadence.streak_risk_hour', 20)
+        ->default('ernestdefoe-cadence.streak_bonfire_levels', '10,25,50,100')
+        ->default('ernestdefoe-cadence.streak_timezone', 'UTC'),
 ];
