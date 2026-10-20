@@ -55,7 +55,9 @@ export class TopFlamesWidget extends Component {
       <div className="FlameWidget">
         <h4 className="FlameWidget-title">{t('widgets.top_flames')}</h4>
         {!entry.data ? (
-          entry.failed ? null : <LoadingIndicator size="small" />
+          entry.failed ? null : (
+            <LoadingIndicator size="small" />
+          )
         ) : entry.data.entries.length ? (
           <ol className="FlameWidget-list">
             {entry.data.entries.map((e) => (
@@ -146,7 +148,16 @@ export function registerWidgets(): void {
         }
       }
 
-      widgets.add({ key: w.key, component: FlameFofWidget, title: () => t(w.label), icon: w.icon, isDisabled: false, isUnique: true, placement: 'end', position });
+      widgets.add({
+        key: w.key,
+        component: FlameFofWidget,
+        title: () => t(w.label),
+        icon: w.icon,
+        isDisabled: false,
+        isUnique: true,
+        placement: 'end',
+        position,
+      });
     });
     widgets.extend(app, 'ernestdefoe-cadence');
   }

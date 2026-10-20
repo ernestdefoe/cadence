@@ -26,7 +26,10 @@ export class FlameRing extends Component<{ days: number; size?: number; user?: a
     const c = 2 * Math.PI * r;
 
     return (
-      <div className={'FlameRing' + (look.glow && days ? ' FlameRing--glow' : '')} style={{ ...flameStyle(look.color), width: size + 'px', height: size + 'px' }}>
+      <div
+        className={'FlameRing' + (look.glow && days ? ' FlameRing--glow' : '')}
+        style={{ ...flameStyle(look.color), width: size + 'px', height: size + 'px' }}
+      >
         <svg viewBox="0 0 36 36" aria-hidden="true">
           <circle className="FlameRing-track" cx="18" cy="18" r={r} />
           {days ? <circle className="FlameRing-arc" cx="18" cy="18" r={r} style={{ strokeDasharray: `${share * c} ${c}` }} /> : null}
@@ -85,7 +88,13 @@ export class FlameCalendar extends Component<{ userId: string; today: string; co
       const label = state === 2 ? t('calendar.saved', { date }) : state === 1 ? t('calendar.fed', { date }) : date;
       cells.push(
         <span
-          className={'FlameCalendar-day' + (state === 1 ? ' is-fed' : '') + (state === 2 ? ' is-saved' : '') + (date === this.attrs.today ? ' is-today' : '') + (future ? ' is-future' : '')}
+          className={
+            'FlameCalendar-day' +
+            (state === 1 ? ' is-fed' : '') +
+            (state === 2 ? ' is-saved' : '') +
+            (date === this.attrs.today ? ' is-today' : '') +
+            (future ? ' is-future' : '')
+          }
           title={label}
           aria-label={label}
         >
@@ -101,7 +110,13 @@ export class FlameCalendar extends Component<{ userId: string; today: string; co
             <Icon name="fas fa-chevron-left" />
           </button>
           <strong>{title}</strong>
-          <button type="button" className="Button Button--icon Button--link" aria-label={t('calendar.next')} disabled={isCurrent} onclick={() => this.move(1)}>
+          <button
+            type="button"
+            className="Button Button--icon Button--link"
+            aria-label={t('calendar.next')}
+            disabled={isCurrent}
+            onclick={() => this.move(1)}
+          >
             <Icon name="fas fa-chevron-right" />
           </button>
         </div>
@@ -154,7 +169,9 @@ export class FlameYear extends Component<{ userId: string; today: string; firstY
       const state = days[date];
       column.push(
         <span
-          className={'FlameYear-day' + (state === 1 ? ' is-fed' : '') + (state === 2 ? ' is-saved' : '') + (date > this.attrs.today ? ' is-future' : '')}
+          className={
+            'FlameYear-day' + (state === 1 ? ' is-fed' : '') + (state === 2 ? ' is-saved' : '') + (date > this.attrs.today ? ' is-future' : '')
+          }
           title={state === 2 ? t('calendar.saved', { date }) : state === 1 ? t('calendar.fed', { date }) : date}
         />
       );
@@ -172,7 +189,13 @@ export class FlameYear extends Component<{ userId: string; today: string; firstY
           {years.length > 1 ? (
             <div className="FlameYear-years" role="tablist">
               {years.map((y) => (
-                <button type="button" role="tab" aria-selected={y === this.year ? 'true' : 'false'} className={'FlameYear-tab' + (y === this.year ? ' is-active' : '')} onclick={() => (this.year = y)}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={y === this.year ? 'true' : 'false'}
+                  className={'FlameYear-tab' + (y === this.year ? ' is-active' : '')}
+                  onclick={() => (this.year = y)}
+                >
                   {y}
                 </button>
               ))}
@@ -213,7 +236,9 @@ export function flameJournal(entries: { type: string; value: number; data: any; 
         <li className={'FlameJournal-item FlameJournal-item--' + e.type}>
           <Icon name={JOURNAL_ICONS[e.type] || 'fas fa-fire'} />
           <div>
-            <div className="FlameJournal-text">{lib(`journal.${e.type}`, { count: e.value, tier: e.data ? tierName({ key: e.data.key || '', name: e.data.name || '' }) : '' })}</div>
+            <div className="FlameJournal-text">
+              {lib(`journal.${e.type}`, { count: e.value, tier: e.data ? tierName({ key: e.data.key || '', name: e.data.name || '' }) : '' })}
+            </div>
             <time dateTime={e.at}>{fmt.format(new Date(e.at))}</time>
           </div>
         </li>
@@ -221,7 +246,6 @@ export function flameJournal(entries: { type: string; value: number; data: any; 
     </ul>
   );
 }
-
 
 export interface CardData {
   current: number;
@@ -283,7 +307,12 @@ export class FlameCard extends Component<{ data: CardData; user?: any; title?: s
             <Icon name="fas fa-fire-flame-simple" />
             <div>
               <strong>{t('embers_title', { count: d.embers })}</strong>
-              <div>{t('embers_body', { share: (app.forum.attribute<any>('cadenceStreakRules')?.embersShare ?? 50) + '%', left: timeLeft(d.embersUntil) })}</div>
+              <div>
+                {t('embers_body', {
+                  share: (app.forum.attribute<any>('cadenceStreakRules')?.embersShare ?? 50) + '%',
+                  left: timeLeft(d.embersUntil),
+                })}
+              </div>
             </div>
           </div>
         ) : null}
@@ -327,11 +356,7 @@ export class FlamePanel extends Component<{ user: any }> {
 
     return (
       <div className="FlamePanel">
-        <FlameCard
-          data={{ ...d, own }}
-          user={user}
-          title={own ? t('your_flame') : t('their_flame', { name: user.displayName() })}
-        />
+        <FlameCard data={{ ...d, own }} user={user} title={own ? t('your_flame') : t('their_flame', { name: user.displayName() })} />
         <section className="FlamePanel-section">
           <h4>{t('activity_log')}</h4>
           <FlameYear userId={user.id()} today={d.today} firstYear={d.firstYear} color={color} />
@@ -352,4 +377,3 @@ export class FlamePanel extends Component<{ user: any }> {
     );
   }
 }
-

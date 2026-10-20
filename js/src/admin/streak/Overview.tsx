@@ -96,7 +96,14 @@ export default class Overview extends Component {
                   <li>
                     <span>
                       <a onclick={() => this.pick({ id: e.user.id, displayName: e.user.displayName })}>{e.user.displayName}</a>{' '}
-                      {extractText(app.translator.trans(`ernestdefoe-cadence.lib.streak.journal.${e.type}`, { count: e.value, tier: e.data?.name || (e.data?.key ? extractText(app.translator.trans(`ernestdefoe-cadence.lib.streak.tiers.${e.data.key}`)) : '') }))}
+                      {extractText(
+                        app.translator.trans(`ernestdefoe-cadence.lib.streak.journal.${e.type}`, {
+                          count: e.value,
+                          tier:
+                            e.data?.name ||
+                            (e.data?.key ? extractText(app.translator.trans(`ernestdefoe-cadence.lib.streak.tiers.${e.data.key}`)) : ''),
+                        })
+                      )}
                       {e.actor ? <small> · {t('overview.by', { name: e.actor.displayName })}</small> : null}
                     </span>
                     <time>{fmt.format(new Date(e.at))}</time>
@@ -153,13 +160,26 @@ export default class Overview extends Component {
             )}
             <div className="CadenceSheet-actions">
               <span>
-                <input className="FormControl CadenceAdmin-num" type="number" min="1" max="20" value={this.amount} oninput={(e: any) => (this.amount = +e.target.value || 1)} />
+                <input
+                  className="FormControl CadenceAdmin-num"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={this.amount}
+                  oninput={(e: any) => (this.amount = +e.target.value || 1)}
+                />
                 <Button className="Button" icon="fas fa-snowflake" loading={this.busy} onclick={() => this.act('give', this.amount)}>
                   {t('sheet.give')}
                 </Button>
               </span>
               <span>
-                <input className="FormControl CadenceAdmin-num" type="number" min="0" value={this.length} oninput={(e: any) => (this.length = Math.max(0, +e.target.value || 0))} />
+                <input
+                  className="FormControl CadenceAdmin-num"
+                  type="number"
+                  min="0"
+                  value={this.length}
+                  oninput={(e: any) => (this.length = Math.max(0, +e.target.value || 0))}
+                />
                 <Button className="Button" icon="fas fa-pen" loading={this.busy} onclick={() => this.act('edit', this.length)}>
                   {t('sheet.edit')}
                 </Button>
@@ -167,7 +187,12 @@ export default class Overview extends Component {
               <Button className="Button" icon="fas fa-fire-flame-simple" loading={this.busy} onclick={() => this.act('revive', 0)}>
                 {t('sheet.revive')}
               </Button>
-              <Button className="Button Button--danger" icon="fas fa-rotate-left" loading={this.busy} onclick={() => confirm(t('sheet.reset_confirm')) && this.act('reset', 0)}>
+              <Button
+                className="Button Button--danger"
+                icon="fas fa-rotate-left"
+                loading={this.busy}
+                onclick={() => confirm(t('sheet.reset_confirm')) && this.act('reset', 0)}
+              >
                 {t('sheet.reset')}
               </Button>
             </div>
@@ -212,7 +237,13 @@ export default class Overview extends Component {
     app
       .request<{ data: any }>({ method: 'POST', url: api(`/cadence/streaks/${this.member.id}/manage`), body: { action, value } })
       .then((res) => {
-        this.memberFlame = { ...this.memberFlame, current: res.data.current, longest: res.data.longest, total: res.data.total, freezes: res.data.freezes };
+        this.memberFlame = {
+          ...this.memberFlame,
+          current: res.data.current,
+          longest: res.data.longest,
+          total: res.data.total,
+          freezes: res.data.freezes,
+        };
         app.alerts.show({ type: 'success' }, t('sheet.done'));
         this.load();
       })

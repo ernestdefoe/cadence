@@ -8,9 +8,20 @@ declare const m: import('mithril').Static;
 const t = (k: string) => app.translator.trans(`ernestdefoe-cadence.admin.${k}`) as string;
 const key = (n: string) => `ernestdefoe-cadence.${n}`;
 
-const bool = (name: string, label = name) => () => ({ setting: key(name), label: t(label), help: t(`${label}_help`), type: 'boolean' });
-const num = (name: string, min: number, max: number) => () => ({ setting: key(name), label: t(`streak.${name}`), help: t(`streak.${name}_help`), type: 'number', min, max });
-const text = (name: string, placeholder = '') => () => ({ setting: key(name), label: t(`streak.${name}`), help: t(`streak.${name}_help`), type: 'text', placeholder });
+const bool =
+  (name: string, label = name) =>
+  () => ({ setting: key(name), label: t(label), help: t(`${label}_help`), type: 'boolean' });
+const num = (name: string, min: number, max: number) => () => ({
+  setting: key(name),
+  label: t(`streak.${name}`),
+  help: t(`streak.${name}_help`),
+  type: 'number',
+  min,
+  max,
+});
+const text =
+  (name: string, placeholder = '') =>
+  () => ({ setting: key(name), label: t(`streak.${name}`), help: t(`streak.${name}_help`), type: 'text', placeholder });
 
 /**
  * 🚨 The `Admin` extender, NOT `app.extensionData`.

@@ -33,8 +33,7 @@ export function celebrate(flame: OwnFlame | null = ownFlame()): void {
       .filter((e, _, all) => e.type !== 'day' || all.length === 1)
       .slice(-3)
       .forEach((e) => {
-        const message =
-          e.type === 'tier' ? t('toast.tier', { tier: tierName(tierFor(e.value)) }) : t(`toast.${e.type}`, { count: e.value });
+        const message = e.type === 'tier' ? t('toast.tier', { tier: tierName(tierFor(e.value)) }) : t(`toast.${e.type}`, { count: e.value });
         app.alerts.show({ type: 'success', icon: 'fas fa-fire', className: 'FlameToast' } as any, message);
       });
   }

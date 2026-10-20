@@ -30,7 +30,13 @@ export class FlameBadge extends Component<{ days: number; user?: any; className?
     const label = t('badge_label', { count: days, tier: tierName(tier) }) + (look.occasion ? ` · ${look.occasion}` : '');
 
     return (
-      <span className={'FlameBadge' + (look.glow ? ' FlameBadge--glow' : '') + ' ' + (this.attrs.className || '')} style={flameStyle(look.color)} title={label} aria-label={label} role="img">
+      <span
+        className={'FlameBadge' + (look.glow ? ' FlameBadge--glow' : '') + ' ' + (this.attrs.className || '')}
+        style={flameStyle(look.color)}
+        title={label}
+        aria-label={label}
+        role="img"
+      >
         <Icon name={look.icon} />
         <span className="FlameBadge-count" aria-hidden="true">
           {days}
@@ -62,7 +68,12 @@ export function tierProgress(days: number) {
 export function miniUser(user: MiniUser) {
   const href = app.route('user', { username: user.slug });
   // Avatar reads only these three; the board sends a slim user, not a model.
-  const stub = { avatarUrl: () => user.avatarUrl, displayName: () => user.displayName, username: () => user.username, color: () => '#' + stringToColor(user.displayName) };
+  const stub = {
+    avatarUrl: () => user.avatarUrl,
+    displayName: () => user.displayName,
+    username: () => user.username,
+    color: () => '#' + stringToColor(user.displayName),
+  };
 
   return (
     <Link className="FlameUser" href={href}>

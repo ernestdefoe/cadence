@@ -93,10 +93,21 @@ export default class TiersEditor extends Component {
                   />
                 </td>
                 <td>
-                  <input className="FormControl CadenceAdmin-num" type="number" min="1" value={tier.days} oninput={(e: any) => this.set(() => (tier.days = Math.max(1, +e.target.value || 1)))} />
+                  <input
+                    className="FormControl CadenceAdmin-num"
+                    type="number"
+                    min="1"
+                    value={tier.days}
+                    oninput={(e: any) => this.set(() => (tier.days = Math.max(1, +e.target.value || 1)))}
+                  />
                 </td>
                 <td>
-                  <input className="CadenceAdmin-color" type="color" value={tier.color} oninput={(e: any) => this.set(() => (tier.color = e.target.value))} />
+                  <input
+                    className="CadenceAdmin-color"
+                    type="color"
+                    value={tier.color}
+                    oninput={(e: any) => this.set(() => (tier.color = e.target.value))}
+                  />
                 </td>
                 <td>
                   <input className="FormControl" value={tier.icon} oninput={(e: any) => this.set(() => (tier.icon = e.target.value))} />
@@ -104,7 +115,12 @@ export default class TiersEditor extends Component {
                 <td>{Switch.component({ state: tier.glow, onchange: (v: boolean) => this.set(() => (tier.glow = v)) })}</td>
                 <td>{Switch.component({ state: tier.enabled, onchange: (v: boolean) => this.set(() => (tier.enabled = v)) })}</td>
                 <td>
-                  <Button className="Button Button--icon Button--link" icon="fas fa-trash" aria-label={t('remove')} onclick={() => this.set(() => this.tiers.splice(i, 1))} />
+                  <Button
+                    className="Button Button--icon Button--link"
+                    icon="fas fa-trash"
+                    aria-label={t('remove')}
+                    onclick={() => this.set(() => this.tiers.splice(i, 1))}
+                  />
                 </td>
               </tr>
             ))}
@@ -113,7 +129,19 @@ export default class TiersEditor extends Component {
         <Button
           className="Button"
           icon="fas fa-plus"
-          onclick={() => this.set(() => this.tiers.push({ key: 'tier' + Date.now().toString(36), name: '', days: (this.tiers[this.tiers.length - 1]?.days || 0) + 30, color: '#f97316', icon: 'fas fa-fire', glow: false, enabled: true }))}
+          onclick={() =>
+            this.set(() =>
+              this.tiers.push({
+                key: 'tier' + Date.now().toString(36),
+                name: '',
+                days: (this.tiers[this.tiers.length - 1]?.days || 0) + 30,
+                color: '#f97316',
+                icon: 'fas fa-fire',
+                glow: false,
+                enabled: true,
+              })
+            )
+          }
         >
           {t('tiers.add')}
         </Button>
@@ -138,29 +166,60 @@ export default class TiersEditor extends Component {
                 <tr>
                   <td>{this.preview(season.color, season.icon, true, 12)}</td>
                   <td>
-                    <input className="FormControl" value={season.name} maxlength={40} oninput={(e: any) => this.set(() => (season.name = e.target.value))} />
+                    <input
+                      className="FormControl"
+                      value={season.name}
+                      maxlength={40}
+                      oninput={(e: any) => this.set(() => (season.name = e.target.value))}
+                    />
                   </td>
                   <td>
-                    <input className="FormControl CadenceAdmin-md" value={season.from} placeholder="12-01" pattern="\d\d-\d\d" oninput={(e: any) => this.set(() => (season.from = e.target.value))} />
+                    <input
+                      className="FormControl CadenceAdmin-md"
+                      value={season.from}
+                      placeholder="12-01"
+                      pattern="\d\d-\d\d"
+                      oninput={(e: any) => this.set(() => (season.from = e.target.value))}
+                    />
                   </td>
                   <td>
-                    <input className="FormControl CadenceAdmin-md" value={season.to} placeholder="12-31" pattern="\d\d-\d\d" oninput={(e: any) => this.set(() => (season.to = e.target.value))} />
+                    <input
+                      className="FormControl CadenceAdmin-md"
+                      value={season.to}
+                      placeholder="12-31"
+                      pattern="\d\d-\d\d"
+                      oninput={(e: any) => this.set(() => (season.to = e.target.value))}
+                    />
                   </td>
                   <td>
-                    <input className="CadenceAdmin-color" type="color" value={season.color} oninput={(e: any) => this.set(() => (season.color = e.target.value))} />
+                    <input
+                      className="CadenceAdmin-color"
+                      type="color"
+                      value={season.color}
+                      oninput={(e: any) => this.set(() => (season.color = e.target.value))}
+                    />
                   </td>
                   <td>
                     <input className="FormControl" value={season.icon} oninput={(e: any) => this.set(() => (season.icon = e.target.value))} />
                   </td>
                   <td>
-                    <Button className="Button Button--icon Button--link" icon="fas fa-trash" aria-label={t('remove')} onclick={() => this.set(() => this.seasons.splice(i, 1))} />
+                    <Button
+                      className="Button Button--icon Button--link"
+                      icon="fas fa-trash"
+                      aria-label={t('remove')}
+                      onclick={() => this.set(() => this.seasons.splice(i, 1))}
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : null}
-        <Button className="Button" icon="fas fa-plus" onclick={() => this.set(() => this.seasons.push({ name: '', from: '12-01', to: '12-31', color: '#22c55e', icon: 'fas fa-snowflake' }))}>
+        <Button
+          className="Button"
+          icon="fas fa-plus"
+          onclick={() => this.set(() => this.seasons.push({ name: '', from: '12-01', to: '12-31', color: '#22c55e', icon: 'fas fa-snowflake' }))}
+        >
           {t('seasons.add')}
         </Button>
 

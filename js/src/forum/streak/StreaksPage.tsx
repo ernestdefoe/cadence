@@ -48,9 +48,7 @@ export default class StreaksPage extends Page {
 
           <div className="StreaksPage-layout">
             <main className="StreaksPage-main">
-              {own && app.forum.attribute('canEarnStreaks') ? (
-                <FlameCard data={{ ...own, standing: me, own: true }} user={app.session.user} />
-              ) : null}
+              {own && app.forum.attribute('canEarnStreaks') ? <FlameCard data={{ ...own, standing: me, own: true }} user={app.session.user} /> : null}
 
               <div className="StreaksPage-tabs" role="tablist">
                 {BOARDS.map((name) => (
