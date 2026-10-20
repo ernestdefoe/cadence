@@ -60,6 +60,8 @@ forum rather than for the decoration that caused it.
 
 **A flame for every member who comes back tomorrow.**
 
+![The streaks leaderboard: your flame with its tier, rank and the road to the next tier; Current, All-time and Hall of Flames; the board's figures, the bonfire and the tiers](screenshots/streak-streaks.png)
+
 A streak counts the days in a row a member shows up — in *their* timezone, not
 the server's — and turns it into a flame: after their name in posts, on their
 card, in the header and on a leaderboard where the next rival is always within
@@ -70,6 +72,10 @@ reach.
 - **It starts with your history.** Other streak add-ons start every member at
   zero; Cadence already holds your forum's activity, so the member who has
   posted every day for two years gets a two-year flame on day one.
+![A flame after every author's name in a discussion](screenshots/streak-posts.png)
+
+![The header flame open: today's streak, the next tier and the month, with fed days filled in](screenshots/streak-header.png)
+
 - **Tiers you design** — days, colour, icon, glow — and seasonal flames for the
   dates you pick. Members with a birthday in Calendar get a golden flame.
 - **A missed day is not the end.** Milestones earn freezes that melt on their
@@ -77,13 +83,23 @@ reach.
   within 48 hours to bring half of it back.
 - **The leaderboard:** Current, All-time and the Hall of Flames, your rank, the
   member just ahead of you, and a community bonfire everyone feeds together.
+![A member's Streak tab: their flame, a year of fed days, the month and their journal](screenshots/streak-profile.png)
+
 - **Alerts members control:** milestones, new tiers and records as alerts and
   a toast on the first page of the day, and an "at risk" email before a flame
   goes out.
 - **Widgets** for Bespoke and fof/forum-widgets-core: My flame, Top flames,
   the Bonfire.
+![The first reply of the seventh day: Milestone reached, You reached Kindled, New personal best](screenshots/streak-toast.png)
+
 - **Admin:** an overview of the whole board and a flame sheet for every member
   — give freezes, set, revive or reset — with every change journaled.
+
+![Admin: key figures, flames by tier, the longest flames alight and recent events](screenshots/streak-admin-overview.png)
+
+![Admin: the tier editor with a live preview of each flame](screenshots/streak-admin-tiers.png)
+
+<img src="screenshots/streak-phone.png" alt="The leaderboard on a phone" width="390">
 
 🚨 **It costs your forum one query per page, however many flames are on it.**
 The flame rides along on users the page already loaded. The leaderboard, the
