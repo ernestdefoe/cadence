@@ -72,6 +72,8 @@ class MapController implements RequestHandlerInterface
         $rows = $this->db->table('cadence_activity')
             ->select('bucket', 'kind', 'count')
             ->where('user_id', $user->id)
+            // Visits feed a streak; they are not activity, so never a square.
+            ->where('kind', '!=', \ErnestDefoe\Cadence\Recorder::VISIT)
             ->where('bucket', '>=', $start->toDateTimeString())
             ->where('bucket', '<=', $end->toDateTimeString())
             ->get();

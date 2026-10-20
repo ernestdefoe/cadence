@@ -4,6 +4,7 @@ namespace ErnestDefoe\Cadence\Listener;
 
 use ErnestDefoe\Cadence\Audience;
 use ErnestDefoe\Cadence\Recorder;
+use ErnestDefoe\Cadence\Streak\Flames;
 use Flarum\Approval\Event\PostWasApproved;
 use Flarum\Likes\Event\PostWasLiked;
 use Flarum\Likes\Event\PostWasUnliked;
@@ -32,7 +33,7 @@ use Illuminate\Contracts\Events\Dispatcher;
  */
 class ActivitySubscriber
 {
-    public function __construct(private Recorder $recorder)
+    public function __construct(private Recorder $recorder, private Flames $flames)
     {
     }
 
@@ -85,7 +86,9 @@ class ActivitySubscriber
      */
     public function posted(Posted $event): void
     {
-        $this->adjust($event->post, 1);
+        if ($this->adjust($event->post, 1)) {
+            $this->flames->feed((int) $event->post->user_id, true);
+        }
     }
 
     /**
@@ -109,12 +112,20 @@ class ActivitySubscriber
         $this->adjust($event->post, 1);
     }
 
+    /**
+     * 🚨 Approval feeds the author's flame only if it lands on the day they
+     * wrote it. A post held overnight was not activity "today", and feeding it
+     * would let a slow moderation queue keep a flame alight.
+     */
     public function approved(PostWasApproved $event): void
     {
-        $this->adjust($event->post, 1);
+        if ($this->adjust($event->post, 1) && $event->post->created_at?->isToday()) {
+            $this->flames->feed((int) $event->post->user_id, true);
+        }
     }
 
-    private function adjust(Post $post, int $delta, bool $ignoreHidden = false): void
+    /** @return bool whether it counted */
+    private function adjust(Post $post, int $delta, bool $ignoreHidden = false): bool
     {
         /*
          * 🚨 Only what the map's audience could see — see Audience. Without
@@ -128,7 +139,7 @@ class ActivitySubscriber
          * like the most active member on the forum.
          */
         if (! Audience::canSee($post, $ignoreHidden)) {
-            return;
+            return false;
         }
 
         $this->recorder->record(
@@ -137,6 +148,8 @@ class ActivitySubscriber
             ((int) $post->number) === 1 ? Recorder::DISCUSSION : Recorder::REPLY,
             $delta
         );
+
+        return true;
     }
 
     // ---- optional kinds ----------------------------------------------------
@@ -186,6 +199,10 @@ class ActivitySubscriber
 
         if ($user && $post instanceof Post && Audience::canSee($post)) {
             $this->recorder->record((int) $user->id, $this->now(), $kind, $delta);
+
+            if ($delta > 0) {
+                $this->flames->feed((int) $user->id, true);
+            }
         }
     }
 

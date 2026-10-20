@@ -24,6 +24,13 @@ class Recorder
     public const REACTION = 'reaction';
     public const BEST_ANSWER = 'best_answer';
 
+    /**
+     * A day a member opened the forum, recorded only when streaks count visits.
+     * Never drawn on the activity map — being here is not doing something —
+     * but it is what the streak calendar and a rebuild read in visit mode.
+     */
+    public const VISIT = 'visit';
+
     public function __construct(private ConnectionInterface $db)
     {
     }

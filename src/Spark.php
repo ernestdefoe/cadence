@@ -109,6 +109,7 @@ abstract class Spark
             $rows = $db->table('cadence_activity')
                 ->select(['user_id', 'bucket', 'count'])
                 ->whereIn('user_id', $chunk)
+                ->where('kind', '!=', Recorder::VISIT)
                 ->where('bucket', '>=', $start->toDateTimeString())
                 ->get();
 

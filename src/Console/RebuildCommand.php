@@ -3,6 +3,7 @@
 namespace ErnestDefoe\Cadence\Console;
 
 use ErnestDefoe\Cadence\Rebuilder;
+use ErnestDefoe\Cadence\Streak\StreakRebuilder;
 use Flarum\Console\AbstractCommand;
 
 /**
@@ -17,7 +18,7 @@ use Flarum\Console\AbstractCommand;
  */
 class RebuildCommand extends AbstractCommand
 {
-    public function __construct(private Rebuilder $rebuilder)
+    public function __construct(private Rebuilder $rebuilder, private StreakRebuilder $streaks)
     {
         parent::__construct();
     }
@@ -25,7 +26,7 @@ class RebuildCommand extends AbstractCommand
     protected function configure(): void
     {
         $this->setName('cadence:rebuild')
-            ->setDescription('Rebuild Cadence activity buckets from posts and likes.');
+            ->setDescription('Rebuild Cadence activity buckets from posts and likes, then every streak.');
     }
 
     protected function fire(): int
@@ -33,6 +34,10 @@ class RebuildCommand extends AbstractCommand
         $total = $this->rebuilder->rebuild(fn (string $line) => $this->info($line));
 
         $this->info("Rebuilt {$total} buckets.");
+
+        // Flames are walked from the buckets, so they follow them.
+        $members = $this->streaks->rebuild(fn (string $line) => $this->info($line));
+        $this->info("Rebuilt flames for {$members} members.");
 
         return 0;
     }
