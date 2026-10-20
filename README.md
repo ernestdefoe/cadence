@@ -56,6 +56,47 @@ post cannot fetch its own data — thirty posts would be thirty requests, which 
 how a shared host runs out of database connections and returns 500 for the whole
 forum rather than for the decoration that caused it.
 
+## Daily streaks
+
+**A flame for every member who comes back tomorrow.**
+
+A streak counts the days in a row a member shows up — in *their* timezone, not
+the server's — and turns it into a flame: after their name in posts, on their
+card, in the header and on a leaderboard where the next rival is always within
+reach.
+
+- **You choose what keeps it alight:** contributing (posting, replying, liking
+  or reacting) or simply visiting.
+- **It starts with your history.** Other streak add-ons start every member at
+  zero; Cadence already holds your forum's activity, so the member who has
+  posted every day for two years gets a two-year flame on day one.
+- **Tiers you design** — days, colour, icon, glow — and seasonal flames for the
+  dates you pick. Members with a birthday in Calendar get a golden flame.
+- **A missed day is not the end.** Milestones earn freezes that melt on their
+  own to save a missed day, and a long flame that goes out leaves embers: post
+  within 48 hours to bring half of it back.
+- **The leaderboard:** Current, All-time and the Hall of Flames, your rank, the
+  member just ahead of you, and a community bonfire everyone feeds together.
+- **Alerts members control:** milestones, new tiers and records as alerts and
+  a toast on the first page of the day, and an "at risk" email before a flame
+  goes out.
+- **Widgets** for Bespoke and fof/forum-widgets-core: My flame, Top flames,
+  the Bonfire.
+- **Admin:** an overview of the whole board and a flame sheet for every member
+  — give freezes, set, revive or reset — with every change journaled.
+
+🚨 **It costs your forum one query per page, however many flames are on it.**
+The flame rides along on users the page already loaded. The leaderboard, the
+profile tab and the header menu load their code only when opened.
+
+For the "at risk" and "embers" alerts, Flarum's scheduler must be running
+(`* * * * * php flarum schedule:run`). Without it, flames still go out on
+time — only those two alerts wait.
+
+Only activity the map's audience could see counts toward a streak, and in
+visit mode a member who hides their online status keeps their visit days to
+themselves.
+
 ## Settings
 
 Admin → Cadence:
@@ -70,7 +111,7 @@ php flarum cache:clear
 php flarum cadence:rebuild
 ```
 
-That last command is worth running once. Cadence maintains its counts from
+That last command is worth running once (enabling the extension runs it too). Cadence maintains its counts from
 events as they happen, so on a forum with existing history it starts empty until
 you rebuild — and a map that tells every member they have never done anything is
 worse than no map.
