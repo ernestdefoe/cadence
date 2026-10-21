@@ -2,6 +2,16 @@
 
 Cadence — see a member's rhythm, not just their volume.
 
+## [1.2.2] — 2026-10-21
+
+### Fixed
+
+- **Turning streaks off is one obvious switch.** With *Daily streaks* off,
+  every other streak setting is hidden and the page says streaks are off, so
+  nobody is left switching placements off one by one while a Streaks link
+  stays behind. Nothing about streaks reaches the forum while it is off —
+  now including the once-a-day check-in, which no longer records a timezone.
+
 ## [1.2.1] — 2026-10-20
 
 ### Fixed

@@ -64,8 +64,9 @@ export function checkIn(force = false): void {
   }
 
   app
-    .request<{ data: { streak: OwnFlame } }>({ method: 'POST', url: apiUrl('/cadence/streak/visit'), body: { timezone: tz } })
+    .request<{ data: { streak: OwnFlame | null } }>({ method: 'POST', url: apiUrl('/cadence/streak/visit'), body: { timezone: tz } })
     .then((res) => {
+      if (!res.data.streak) return; // streaks were switched off meanwhile
       applyOwn(res.data.streak);
       forget(user.id()!);
       celebrate(res.data.streak);

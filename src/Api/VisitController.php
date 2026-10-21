@@ -34,6 +34,11 @@ class VisitController implements RequestHandlerInterface
         $actor = RequestUtil::getActor($request);
         $actor->assertRegistered();
 
+        // Streaks off: nothing to check in to, and nothing is written.
+        if (! $this->rules->enabled()) {
+            return new JsonResponse(['data' => ['streak' => null, 'events' => []]]);
+        }
+
         $body = (array) $request->getParsedBody();
 
         if ($tz = Rules::validTimezone((string) ($body['timezone'] ?? ''))) {

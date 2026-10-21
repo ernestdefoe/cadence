@@ -8,6 +8,18 @@ declare const m: import('mithril').Static;
 const t = (k: string) => app.translator.trans(`ernestdefoe-cadence.admin.${k}`) as string;
 const key = (n: string) => `ernestdefoe-cadence.${n}`;
 
+/*
+ * 🚨 Streaks are ONE switch. With it off, every other streak setting is
+ * hidden, so nobody turns off the placements one by one and is left
+ * wondering why a Streaks link is still there (asked on Discuss, #10). Read
+ * from the saved value: the page shows the rest once "on" is saved.
+ */
+const streaksOn = () => !['0', 'false', ''].includes(String(app.data.settings[key('streaks')] ?? '1'));
+const whenOn =
+  <T>(make: () => T) =>
+  () =>
+    streaksOn() ? make() : null;
+
 const bool =
   (name: string, label = name) =>
   () => ({ setting: key(name), label: t(label), help: t(`${label}_help`), type: 'boolean' });
@@ -43,39 +55,49 @@ export default [
 
     .customSetting(() => m('h2.CadenceAdmin-heading', t('streak.heading')), 200)
     .setting(bool('streaks', 'streak.enabled'), 199)
-    .customSetting(() => m(Overview), 198)
+    .customSetting(
+      whenOn(() => m(Overview)),
+      198
+    )
     .setting(
-      () => ({
+      whenOn(() => ({
         setting: key('streak_mode'),
         label: t('streak.mode'),
         help: t('streak.mode_help'),
         type: 'select',
         options: { contribute: t('streak.mode_contribute'), visit: t('streak.mode_visit') },
         default: 'contribute',
-      }),
+      })),
       190
     )
-    .setting(num('streak_grace', 0, 3), 189)
-    .setting(text('streak_milestones', '3,7,14,30,50,100,150,200,250,365,500,730,1000'), 188)
-    .setting(num('streak_freeze_per_milestone', 0, 5), 187)
-    .setting(num('streak_freeze_bank', 0, 20), 186)
-    .setting(num('streak_embers_min', 0, 10000), 185)
-    .setting(num('streak_embers_hours', 1, 168), 184)
-    .setting(num('streak_embers_share', 1, 100), 183)
-    .setting(num('streak_hall_min', 1, 10000), 182)
-    .setting(num('streak_risk_min', 1, 10000), 181)
-    .setting(num('streak_risk_hour', 0, 23), 180)
-    .setting(text('streak_bonfire_levels', '10,25,50,100'), 179)
-    .setting(text('streak_timezone', 'UTC'), 178)
-    .customSetting(() => m(TiersEditor), 170)
+    .customSetting(() => (streaksOn() ? null : m('p.CadenceAdmin-off', t('streak.off_notice'))), 189.5)
+    .setting(whenOn(num('streak_grace', 0, 3)), 189)
+    .setting(whenOn(text('streak_milestones', '3,7,14,30,50,100,150,200,250,365,500,730,1000')), 188)
+    .setting(whenOn(num('streak_freeze_per_milestone', 0, 5)), 187)
+    .setting(whenOn(num('streak_freeze_bank', 0, 20)), 186)
+    .setting(whenOn(num('streak_embers_min', 0, 10000)), 185)
+    .setting(whenOn(num('streak_embers_hours', 1, 168)), 184)
+    .setting(whenOn(num('streak_embers_share', 1, 100)), 183)
+    .setting(whenOn(num('streak_hall_min', 1, 10000)), 182)
+    .setting(whenOn(num('streak_risk_min', 1, 10000)), 181)
+    .setting(whenOn(num('streak_risk_hour', 0, 23)), 180)
+    .setting(whenOn(text('streak_bonfire_levels', '10,25,50,100')), 179)
+    .setting(whenOn(text('streak_timezone', 'UTC')), 178)
+    .customSetting(
+      whenOn(() => m(TiersEditor)),
+      170
+    )
 
-    .customSetting(() => m('h3', t('streak.placements')), 160)
-    .setting(bool('streak_in_header', 'streak.in_header'), 159)
-    .setting(bool('streak_on_posts', 'streak.on_posts'), 158)
-    .setting(bool('streak_on_cards', 'streak.on_cards'), 157)
-    .setting(bool('streak_on_profile', 'streak.on_profile'), 156)
-    .setting(bool('streak_nav', 'streak.nav'), 155)
-    .setting(bool('streak_sidebar', 'streak.sidebar'), 154)
+    .customSetting(
+      whenOn(() => m('h3', t('streak.placements'))),
+      160
+    )
+    .setting(whenOn(bool('streak_in_header', 'streak.in_header')), 159)
+    .setting(whenOn(bool('streak_on_posts', 'streak.on_posts')), 158)
+    .setting(whenOn(bool('streak_on_cards', 'streak.on_cards')), 157)
+    .setting(whenOn(bool('streak_on_profile', 'streak.on_profile')), 156)
+    .setting(whenOn(bool('streak_nav', 'streak.nav')), 155)
+    .setting(whenOn(bool('streak_sidebar', 'streak.sidebar')), 154)
 
     .customSetting(() => m('h2.CadenceAdmin-heading', t('map_heading')), 100)
     .setting(bool('show_on_profile'), 90)

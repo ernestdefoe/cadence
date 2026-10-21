@@ -109,6 +109,12 @@ For the "at risk" and "embers" alerts, Flarum's scheduler must be running
 (`* * * * * php flarum schedule:run`). Without it, flames still go out on
 time — only those two alerts wait.
 
+**Don't want streaks?** Turn off **Daily streaks** at the top of Cadence's
+settings. That one switch removes everything (the flames, header button,
+Streaks link, leaderboard, profile tab, widgets, alerts and emails) and stops
+counting, while the activity map keeps working. Nothing is deleted, so turning
+it back on picks up where you left off.
+
 Only activity the map's audience could see counts toward a streak, and in
 visit mode a member who hides their online status keeps their visit days to
 themselves.

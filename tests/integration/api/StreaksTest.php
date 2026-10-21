@@ -348,4 +348,38 @@ class StreaksTest extends TestCase
         $flames->feed(2, true, Carbon::now('UTC')->addDay()->setTime(12, 0));
         $this->assertSame(11, (int) $this->row(2)->current);
     }
+
+    #[Test]
+    public function switched_off_streaks_are_off_everywhere()
+    {
+        $this->setting('ernestdefoe-cadence.streaks', '0');
+        $this->app();
+        $this->flame(3, 9, 0);
+
+        // The forum hides every placement; nothing streak-shaped is sent.
+        [, $forum] = $this->json('GET', '/api', 2);
+        $this->assertFalse($forum['data']['attributes']['cadenceStreaks']);
+        $this->assertFalse($forum['data']['attributes']['canEarnStreaks']);
+        $this->assertArrayNotHasKey('cadenceStreakRules', $forum['data']['attributes']);
+
+        [, $user] = $this->json('GET', '/api/users/3', 3);
+        $this->assertArrayNotHasKey('cadenceStreak', $user['data']['attributes']);
+        $this->assertArrayNotHasKey('cadenceFlame', $user['data']['attributes']);
+
+        // The pages behind it are gone.
+        $this->assertSame(404, $this->json('GET', '/api/cadence/streaks', 2)[0]);
+        $this->assertSame(404, $this->json('GET', '/api/cadence/streaks/3', 2)[0]);
+
+        // Nothing is counted: not a post, not a visit, not a timezone.
+        $this->reply(2);
+        [$status, $body] = $this->json('POST', '/api/cadence/streak/visit', 2, ['timezone' => 'Europe/London']);
+        $this->assertSame(200, $status);
+        $this->assertNull($body['data']['streak']);
+        $this->assertNull($this->row(2));
+
+        // And the activity map works on its own.
+        [$status, $map] = $this->json('GET', '/api/cadence/2', 2);
+        $this->assertSame(200, $status);
+        $this->assertNotEmpty($map['data']['days']);
+    }
 }
