@@ -319,12 +319,16 @@ class Flames
             return;
         }
 
-        $slack = 1 + $this->rules->grace() + $row->freezes;
-
         // Counted from the fixed end of the last fed day, so a later timezone
-        // change cannot stretch (or cut) the deadline. Whole days of 24 hours.
+        // change cannot stretch (or cut) the deadline.
         $ends = $row->day_ends_at ? Carbon::instance($row->day_ends_at)->utc() : $this->endOf($row, $row->last_day);
-        $row->alive_until = $ends->copy()->addHours(24 * $slack);
+        $row->alive_until = $this->aliveUntil($ends, $row->freezes);
+    }
+
+    /** When a flame whose last fed day ends at `$ends` goes out: whole days of 24 hours. */
+    public function aliveUntil(Carbon $ends, int $freezes): Carbon
+    {
+        return $ends->copy()->addHours(24 * (1 + $this->rules->grace() + $freezes));
     }
 
     /** The UTC instant a local date ends, in the member's current timezone. */

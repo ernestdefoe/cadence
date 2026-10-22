@@ -110,3 +110,34 @@
   background: var(--control-bg);
   color: var(--muted-color);
 }
+
+.CadenceAdmin-building {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--primary-color);
+  border-radius: var(--border-radius);
+  background: var(--control-bg);
+
+  p {
+    margin: 0 0 8px;
+  }
+
+  &.is-done {
+    border-left-color: var(--success-color, #2e7d32);
+  }
+}
+
+.CadenceAdmin-buildingBar {
+  height: 6px;
+  margin-bottom: 8px;
+  border-radius: 3px;
+  background: rgba(127, 127, 127, 0.25);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.4s ease;
+  }
+}

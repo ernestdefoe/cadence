@@ -68,6 +68,7 @@ export default class StreaksPage extends Page {
               </div>
 
               {this.tab === 'hall' ? <p className="StreaksPage-note">{t('board.hall_intro')}</p> : null}
+              {rules()?.building != null ? <p className="StreaksPage-note">{t('board.building', { percent: rules()!.building })}</p> : null}
 
               {this.list()}
             </main>

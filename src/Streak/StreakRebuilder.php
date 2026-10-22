@@ -3,12 +3,11 @@
 namespace ErnestDefoe\Cadence\Streak;
 
 use Carbon\Carbon;
-use Carbon\CarbonImmutable;
 use ErnestDefoe\Cadence\Recorder;
 use Illuminate\Database\ConnectionInterface;
 
 /**
- * Rebuilds every member's flame from the activity Cadence already holds.
+ * Rebuilds members' flames from the activity Cadence already holds.
  *
  * This is the thing XenStreak cannot do: it counts visits, which no forum keeps
  * a history of, so every member starts at zero. Cadence's hourly buckets ARE a
@@ -19,164 +18,252 @@ use Illuminate\Database\ConnectionInterface;
  * total days, and the Hall of Flames (the runs that already ended). Not
  * rebuilt: the rest of the journal — milestones nobody saw happen are not
  * moments, and back-dating a hundred of them would bury the real ones.
+ *
+ * 🚨 A slice of members at a time, and a slice is a fixed number of queries
+ * whatever its size: one grouped read of the activity, one of the rows, one of
+ * the saved days, one upsert, one delete and one insert for the Hall. It used to
+ * be an Eloquent find + save per member inside a migration, which on a forum of
+ * 568k posts outlived the "enable" request (Discuss #15). See Backfill.
  */
 class StreakRebuilder
 {
+    /** @var array<string, int> UTC hour or date → unix time */
+    private array $epoch = [];
+
+    /** @var array<string, array<int, int>> timezone → UTC hour → offset in seconds */
+    private array $offsets = [];
+
+    /** @var array<string, \DateTimeZone> */
+    private array $zones = [];
+
+    /** @var array<string, string> raw timezone → the one used */
+    private array $tzMemo = [];
+
     public function __construct(private ConnectionInterface $db, private Rules $rules, private Flames $flames)
     {
     }
 
-    /** @return int members with a flame */
-    public function rebuild(?callable $say = null): int
+    /**
+     * Every member, a slice at a time. For tests and small forums; the
+     * Backfill is what walks a big one in the background.
+     *
+     * @return int members with a flame
+     */
+    public function rebuild(int $size = 500): int
     {
-        $say ??= fn (string $line) => null;
-
-        $now = Carbon::now('UTC');
-        $grace = $this->rules->grace();
-        $hallMin = $this->rules->hallMin();
-        $kinds = $this->rules->mode() === 'visit' ? null : [Recorder::VISIT];
-
-        $timezones = $this->db->table('cadence_streaks')->whereNotNull('timezone')->pluck('timezone', 'user_id')->all();
-        $default = $this->rules->defaultTimezone();
-
-        /*
-         * 🚨 Days a freeze saved are days the flame burned. They are in the
-         * journal, not in the activity, and leaving them out would break every
-         * run a freeze ever rescued.
-         */
-        $saved = [];
-        foreach ($this->db->table('cadence_streak_journal')->where('type', Journal::SAVED)->get(['user_id', 'data']) as $entry) {
-            foreach ((json_decode((string) $entry->data, true)['days'] ?? []) as $day) {
-                $saved[(int) $entry->user_id][$day] = true;
-            }
-        }
-
-        $say('Clearing the Hall of Flames…');
-        $this->db->table('cadence_streak_journal')->where('type', Journal::ENDED)->delete();
-
-        $say('Walking every member\'s days…');
-
         $members = 0;
-        $userId = null;
-        $days = [];
+        $after = 0;
 
-        /*
-         * 🚨 One ordered cursor over the buckets, a member at a time, rather
-         * than a query per member or every row in memory. A big forum has
-         * millions of buckets; this holds one member's days at once.
-         */
-        $cursor = $this->db->table('cadence_activity')
-            ->select(['user_id', 'bucket'])
-            ->when($kinds, fn ($q) => $q->whereNotIn('kind', $kinds))
-            ->where('count', '>', 0)
-            // Only members who still exist; see store().
-            ->whereIn('user_id', fn ($q) => $q->from('users')->select('id'))
-            ->orderBy('user_id')->orderBy('bucket')
-            ->cursor();
-
-        $tzOf = fn (int $id) => Rules::validTimezone($timezones[$id] ?? null) ?? $default;
-
-        foreach ($cursor as $row) {
-            $id = (int) $row->user_id;
-
-            // The cursor is ordered by member: a new id means the last is done.
-            if ($id !== $userId && $userId !== null) {
-                $this->store($userId, array_keys($days + ($saved[$userId] ?? [])), $tzOf($userId), $grace, $hallMin, $now);
-                $members++;
-                $days = [];
-            }
-
-            $userId = $id;
-            $days[Carbon::parse($row->bucket, 'UTC')->setTimezone($tzOf($id))->toDateString()] = true;
-        }
-
-        if ($userId !== null) {
-            $this->store($userId, array_keys($days + ($saved[$userId] ?? [])), $tzOf($userId), $grace, $hallMin, $now);
-            $members++;
+        while ($ids = $this->db->table('users')->where('id', '>', $after)->orderBy('id')->limit($size)->pluck('id')->map(fn ($id) => (int) $id)->all()) {
+            $members += $this->rebuildUsers($ids);
+            $after = end($ids);
         }
 
         return $members;
     }
 
-    /** @param string[] $days ascending local dates */
-    private function store(int $userId, array $days, string $tz, int $grace, int $hallMin, Carbon $now): void
+    /**
+     * Rebuild these members' flames. Safe to repeat: the same activity gives
+     * the same rows, and the slice's Hall of Flames is replaced, not added to.
+     *
+     * @param  int[]  $ids  members that exist
+     * @return int members with a flame
+     */
+    public function rebuildUsers(array $ids, ?Carbon $now = null): int
     {
-        sort($days);
+        if (! $ids) {
+            return 0;
+        }
+
+        $now ??= Carbon::now('UTC');
+        $grace = $this->rules->grace();
+        $hallMin = $this->rules->hallMin();
+        $default = $this->rules->defaultTimezone();
+
+        /*
+         * One grouped read: per member and UTC date, the first and last active
+         * hour. A day is a day in the MEMBER's timezone, so the database cannot
+         * pick the date for us — but a UTC date is 24 hours, which fall on at
+         * most two local dates, and its first and last active hours land on
+         * exactly those. So two hours per UTC date decide the local days, and
+         * for a member on UTC they are the same date. (The one exception, a
+         * half-hour zone on its daylight-saving night, can only miss a day
+         * that both its neighbours already count.)
+         *
+         * 🚨 Raw SQL is passed through verbatim, so the column is wrapped by
+         * the grammar; DATE() is the same function on MySQL, MariaDB,
+         * PostgreSQL and SQLite. Streamed, not collected: the first slice holds
+         * a forum's heaviest posters, and a slice of objects was 100 MB.
+         */
+        $bucket = $this->db->getQueryGrammar()->wrap('bucket');
+        $query = $this->db->table('cadence_activity')
+            ->whereIn('user_id', $ids)
+            ->where('count', '>', 0)
+            ->selectRaw($this->db->getQueryGrammar()->wrap('user_id').", DATE($bucket) AS utc_day, MIN($bucket) AS first_hour, MAX($bucket) AS last_hour")
+            ->groupBy('user_id')
+            ->groupByRaw("DATE($bucket)");
+
+        // Visits only keep a flame alive when the admin chose visiting.
+        if ($this->rules->mode() !== 'visit') {
+            $query->where('kind', '!=', Recorder::VISIT);
+        }
+
+        $existing = $this->db->table('cadence_streaks')->whereIn('user_id', $ids)->pluck('timezone', 'user_id')->all();
+
+        $days = [];
+        foreach ($query->cursor() as $row) {
+            $id = (int) $row->user_id;
+            $tz = $this->tz($existing[$id] ?? null, $default);
+
+            if ($tz === 'UTC') {
+                $days[$id][$this->dayNumber((string) $row->utc_day)] = true;
+            } else {
+                $days[$id][$this->localDay((string) $row->first_hour, $tz)] = true;
+                $days[$id][$this->localDay((string) $row->last_hour, $tz)] = true;
+            }
+        }
+
+        return $this->db->transaction(function () use ($ids, $days, $grace, $hallMin, $default, $now) {
+            // Locked, so a reply landing mid-slice waits rather than being overwritten.
+            $existing = $this->db->table('cadence_streaks')->whereIn('user_id', $ids)->lockForUpdate()
+                ->get(['user_id', 'timezone', 'freezes', 'fed_at'])->keyBy('user_id');
+
+            /*
+             * 🚨 Days a freeze saved are days the flame burned. They are in the
+             * journal, not in the activity, and leaving them out would break
+             * every run a freeze ever rescued.
+             */
+            $saved = [];
+            foreach ($this->db->table('cadence_streak_journal')->whereIn('user_id', $ids)->where('type', Journal::SAVED)->get(['user_id', 'data']) as $entry) {
+                foreach ((json_decode((string) $entry->data, true)['days'] ?? []) as $day) {
+                    $saved[(int) $entry->user_id][$this->dayNumber($day)] = true;
+                }
+            }
+
+            $rows = [];
+            $hall = [];
+
+            foreach ($ids as $id) {
+                $have = $existing[$id] ?? null;
+                $tz = $this->tz($have->timezone ?? null, $default);
+                $fed = ($days[$id] ?? []) + ($saved[$id] ?? []);
+
+                if (! $fed) {
+                    continue;
+                }
+
+                [$row, $ended] = $this->flame($id, array_keys($fed), $tz, $have, $grace, $now);
+                $rows[] = $row;
+
+                foreach ($ended as [$from, $to]) {
+                    if ($to - $from + 1 >= $hallMin) {
+                        $hall[] = [
+                            'user_id' => $id,
+                            'type' => Journal::ENDED,
+                            'value' => $to - $from + 1,
+                            'data' => json_encode(['from' => self::date($from), 'to' => self::date($to)]),
+                            'created_at' => Carbon::parse(self::date($to), $tz)->addDay()->endOfDay()->utc()->toDateTimeString(),
+                        ];
+                    }
+                }
+            }
+
+            foreach (array_chunk($rows, 500) as $chunk) {
+                $this->db->table('cadence_streaks')->upsert($chunk, ['user_id'], array_keys(array_diff_key($chunk[0], ['user_id' => 0])));
+            }
+
+            // The slice's Hall of Flames is replaced, so a repeated slice adds nothing.
+            $this->db->table('cadence_streak_journal')->whereIn('user_id', $ids)->where('type', Journal::ENDED)->delete();
+            foreach (array_chunk($hall, 500) as $chunk) {
+                $this->db->table('cadence_streak_journal')->insert($chunk);
+            }
+
+            return count($rows);
+        });
+    }
+
+    /**
+     * One member's row, and the runs that already ended.
+     *
+     * @param  int[]  $days  local days as day numbers
+     * @return array{0: array<string, mixed>, 1: array<int, array{0: int, 1: int}>}
+     */
+    private function flame(int $id, array $days, string $tz, ?object $have, int $grace, Carbon $now): array
+    {
+        sort($days, SORT_NUMERIC);
 
         // Split into runs: a gap of more than `grace` missed days ends one.
         $runs = [];
         $start = $prev = $days[0];
+        $longest = 0;
 
-        foreach (array_slice($days, 1) as $day) {
-            $missed = (int) CarbonImmutable::parse($prev)->diffInDays(CarbonImmutable::parse($day)) - 1;
-
-            if ($missed > $grace) {
+        foreach ($days as $day) {
+            if ($day - $prev - 1 > $grace) {
                 $runs[] = [$start, $prev];
+                $longest = max($longest, $prev - $start + 1);
                 $start = $day;
             }
             $prev = $day;
         }
         $runs[] = [$start, $prev];
+        $longest = max($longest, $prev - $start + 1);
 
-        $length = fn (array $run) => (int) CarbonImmutable::parse($run[0])->diffInDays(CarbonImmutable::parse($run[1])) + 1;
-        $longest = max(array_map($length, $runs));
-
-        $this->db->table('cadence_streaks')->insertOrIgnore(['user_id' => $userId]);
-        $row = Streak::query()->find($userId);
-
-        /*
-         * 🚨 Activity outlives accounts — `cadence_activity` has no foreign key,
-         * so a deleted member's buckets are still there — while a flame's row
-         * does, and the insert above is quietly ignored for them. Found on the
-         * dev forum, where it killed the install migration without a word. The
-         * cursor already skips them; this is the belt to its braces.
-         */
-        if (! $row) {
-            return;
-        }
-
-        [$first, $last] = end($runs);
-        $row->current = $length([$first, $last]);
-        $row->started_on = $first;
-        $row->last_day = $last;
-        $row->day_ends_at = Carbon::parse($last, $tz)->endOfDay()->utc();
-        $row->longest = $longest;
-        $row->total_days = count($days);
+        $current = $prev - $start + 1;
+        $last = self::date($prev);
+        $dayEnds = Carbon::parse($last, $tz)->endOfDay()->utc();
 
         // A new row starts with the freezes its current run's milestones earned.
-        if (! $row->fed_at) {
-            $crossed = count(array_filter($this->rules->milestones(), fn ($m) => $m <= $row->current));
-            $row->freezes = min($this->rules->freezeBank(), $crossed * $this->rules->freezesPerMilestone());
-            $row->fed_at = Carbon::parse($last, $tz)->utc();
+        if ($have?->fed_at) {
+            $freezes = (int) $have->freezes;
+            $fedAt = (string) $have->fed_at;
+        } else {
+            $crossed = count(array_filter($this->rules->milestones(), fn ($m) => $m <= $current));
+            $freezes = min($this->rules->freezeBank(), $crossed * $this->rules->freezesPerMilestone());
+            $fedAt = Carbon::parse($last, $tz)->utc()->toDateTimeString();
         }
 
-        $this->flames->refresh($row);
+        $aliveUntil = $this->flames->aliveUntil($dayEnds, $freezes);
+        $alight = $aliveUntil->gte($now);
 
-        // Runs that already ended belong in the Hall of Flames.
-        $ended = $row->isAlight($now) ? array_slice($runs, 0, -1) : $runs;
+        // 🚨 Strings cut to the second: a DATETIME column ROUNDS 23:59:59.999999
+        // up to the next day on MySQL.
+        return [[
+            'user_id' => $id,
+            'current' => $alight ? $current : 0,
+            'longest' => $longest,
+            'total_days' => count($days),
+            'started_on' => $alight ? self::date($start) : null,
+            'last_day' => $last,
+            'day_ends_at' => $dayEnds->toDateTimeString(),
+            'alive_until' => $aliveUntil->toDateTimeString(),
+            'freezes' => $freezes,
+            'fed_at' => $fedAt,
+        ], $alight ? array_slice($runs, 0, -1) : $runs];
+    }
 
-        if (! $row->isAlight($now)) {
-            $row->current = 0;
-            $row->started_on = null;
-        }
+    /** The member's local day an hour bucket falls on, as a day number. */
+    private function localDay(string $bucket, string $tz): int
+    {
+        $ts = $this->epoch[$bucket] ??= (int) strtotime($bucket.' UTC');
+        $hour = intdiv($ts, 3600);
+        $offset = $this->offsets[$tz][$hour] ??= ($this->zones[$tz] ??= new \DateTimeZone($tz))->getOffset(new \DateTimeImmutable('@'.$ts));
 
-        $row->save();
+        return intdiv($ts + $offset, 86400);
+    }
 
-        $rows = [];
-        foreach ($ended as $run) {
-            if ($length($run) >= $hallMin) {
-                $rows[] = [
-                    'user_id' => $userId,
-                    'type' => Journal::ENDED,
-                    'value' => $length($run),
-                    'data' => json_encode(['from' => $run[0], 'to' => $run[1]]),
-                    'created_at' => Carbon::parse($run[1], $tz)->addDay()->endOfDay()->utc()->toDateTimeString(),
-                ];
-            }
-        }
+    private function tz(?string $raw, string $default): string
+    {
+        return $this->tzMemo[$raw ?? ''] ??= Rules::validTimezone($raw) ?? $default;
+    }
 
-        if ($rows) {
-            $this->db->table('cadence_streak_journal')->insert($rows);
-        }
+    /** Days since 1970-01-01: whole numbers make "the next day" a + 1. */
+    private function dayNumber(string $date): int
+    {
+        return intdiv($this->epoch[$date] ??= (int) strtotime(substr($date, 0, 10).' 00:00:00 UTC'), 86400);
+    }
+
+    private static function date(int $day): string
+    {
+        return gmdate('Y-m-d', $day * 86400);
     }
 }

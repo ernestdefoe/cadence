@@ -130,19 +130,35 @@ Admin → Cadence:
 ```bash
 composer require ernestdefoe/cadence
 php flarum cache:clear
-php flarum cadence:rebuild
 ```
 
-That last command is worth running once (enabling the extension runs it too). Cadence maintains its counts from
-events as they happen, so on a forum with existing history it starts empty until
-you rebuild — and a map that tells every member they have never done anything is
-worse than no map.
+Then enable Cadence in the admin. Enabling returns at once: building every
+member's activity map and flame from your forum's history happens **in the
+background**, a slice of members at a time —
+
+- on your **queue**, if the forum has one (database, Redis/Horizon);
+- otherwise **every minute from the scheduler** (`php flarum schedule:run` in
+  cron, as Flarum recommends);
+- and **while the Cadence settings page is open**, which shows the progress
+  ("Building streaks: 42%"). Flames appear as they are built.
+
+On a big forum, or to watch it finish, run it yourself:
+
+```bash
+php flarum cadence:rebuild-streaks
+```
+
+It shows a progress bar, resumes a rebuild that is pending or was interrupted
+(stop it with Ctrl+C and run it again any time), and with `--fresh` starts again
+from the first member. As a guide, 500,000 posts and 15,000 members take about
+15 seconds on MySQL.
 
 ```bash
 php flarum cadence:rebuild
 ```
 
-Rebuilds the posts and likes buckets from your forum's own tables. Safe to re-run.
+Rebuilds the posts and likes buckets from your forum's own tables, then every
+flame. Safe to re-run.
 
 Only activity a guest could see is counted — or, on a forum guests cannot open,
 activity an ordinary member could see. Posts in staff-only tags, private

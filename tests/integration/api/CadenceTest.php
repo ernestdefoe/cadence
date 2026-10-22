@@ -81,10 +81,9 @@ class CadenceTest extends TestCase
     #[Test]
     public function the_map_is_built_from_what_everyone_can_see()
     {
-        // What enabling the extension runs (a migration) and the console
-        // command both do: the open discussion's first post counts, the
-        // hidden one's does not.
-        $this->app()->getContainer()->make(Rebuilder::class)->rebuild();
+        // What the background rebuild and the console command both do: the
+        // open discussion's first post counts, the hidden one's does not.
+        $this->app()->getContainer()->make(Rebuilder::class)->rebuildUsers([1, 2, 3]);
         $this->assertSame(['discussion' => 1], $this->totals(3));
 
         [$status, $body] = $this->json('GET', '/api/cadence/3');

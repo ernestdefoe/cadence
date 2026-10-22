@@ -9,9 +9,12 @@
 
 use ErnestDefoe\Cadence\Api;
 use ErnestDefoe\Cadence\Api\MapController;
+use ErnestDefoe\Cadence\Backfill;
+use ErnestDefoe\Cadence\Console\BackfillCommand;
 use ErnestDefoe\Cadence\Console\RebuildCommand;
 use ErnestDefoe\Cadence\Console\RebuildStreaksCommand;
 use ErnestDefoe\Cadence\Console\SettleCommand;
+use ErnestDefoe\Cadence\Extend\StartBackfill;
 use ErnestDefoe\Cadence\Listener\ActivitySubscriber;
 use ErnestDefoe\Cadence\Notification\StreakMoment;
 use ErnestDefoe\Cadence\Notification\StreakWarning;
@@ -22,6 +25,7 @@ use Flarum\Api\Resource\ForumResource;
 use Flarum\Api\Resource\UserResource;
 use Flarum\Api\Schema;
 use Flarum\Extend;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Console\Scheduling\Event;
 
@@ -74,6 +78,7 @@ return [
         ->post('/cadence/streaks/{id:[0-9]+}/manage', 'cadence.streaks.manage', Api\ManageController::class)
         ->post('/cadence/streak/visit', 'cadence.streak.visit', Api\VisitController::class)
         ->post('/cadence/streak/ack', 'cadence.streak.ack', Api\AckController::class)
+        ->post('/cadence/backfill', 'cadence.backfill', Api\BackfillController::class)
         ->get('/cadence/{id}', 'cadence.map', MapController::class),
 
     (new Extend\Notification())
@@ -89,9 +94,17 @@ return [
         ->command(RebuildCommand::class)
         ->command(RebuildStreaksCommand::class)
         ->command(SettleCommand::class)
+        ->command(BackfillCommand::class)
         ->schedule(SettleCommand::class, function (Event $event): void {
             $event->hourly()->withoutOverlapping();
+        })
+        // A pending rebuild on a forum with no queue; a no-op otherwise.
+        ->schedule(BackfillCommand::class, function (Event $event): void {
+            $event->everyMinute()->withoutOverlapping();
         }),
+
+    // 🚨 Hands the history rebuild to the queue on enable; see Backfill.
+    new StartBackfill(),
 
     /*
      * 🚨 The compact sparkline rides along on the user the page has ALREADY
@@ -144,6 +157,8 @@ return [
                         'embersMin' => $rules->embersMin(),
                         'embersHours' => $rules->embersHours(),
                         'embersShare' => $rules->embersShare(),
+                        // While the history rebuild runs: how far it has got.
+                        'building' => Backfill::percent(json_decode((string) resolve(SettingsRepositoryInterface::class)->get(Backfill::KEY), true)),
                     ];
                 }),
         ]),

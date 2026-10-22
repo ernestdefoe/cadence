@@ -2,6 +2,33 @@
 
 Cadence — see a member's rhythm, not just their volume.
 
+## [1.2.3] — 2026-10-22
+
+### Fixed
+
+- **Enabling Cadence on a big forum timed out** (a Cloudflare 502 on a forum
+  of 568k posts). The history rebuild ran inside the "enable" click; now
+  enabling returns at once and the rebuild runs in the background — on the
+  queue if there is one, otherwise every minute from the scheduler, and while
+  the settings page is open, which shows its progress. A rebuild that was
+  interrupted, including a failed enable on 1.2.0–1.2.2, finishes on the next
+  enable and repairs what was left half-written.
+- **The rebuild is much faster.** On 500,000 posts and 15,000 members the
+  whole rebuild went from 85 seconds to about 12, and the flames alone from 53
+  seconds to 2, with identical results.
+- **An empty column beside the discussion list with FoF Widgets.** Cadence's
+  widgets were shown in FoF's right-hand column on every forum with
+  fof/forum-widgets-core, could not be removed in its layout editor, and showed
+  an empty box where a widget had nothing for that visitor. They now appear in
+  the layout editor's available widgets and show only where you place them,
+  only while Daily streaks is on, and only when they have something to show.
+  If you used them, drag them into place again and save.
+
+### Added
+
+- `php flarum cadence:rebuild-streaks`: rebuild every flame with a progress
+  bar; resumes an unfinished rebuild (`--fresh` starts over).
+
 ## [1.2.2] — 2026-10-21
 
 ### Fixed

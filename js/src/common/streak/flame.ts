@@ -29,6 +29,8 @@ export interface StreakRules {
   embersMin: number;
   embersHours: number;
   embersShare: number;
+  /** 0–100 while the history rebuild runs; null once it is done. */
+  building?: number | null;
 }
 
 /** The member's own flame, `cadenceFlame` on the session user. */

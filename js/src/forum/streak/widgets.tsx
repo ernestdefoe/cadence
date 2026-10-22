@@ -6,6 +6,7 @@ import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import { lookFor, ownFlame, t, tierFor, tierName } from '../../common/streak/flame';
 import { bonfire, FlameBadge, miniUser, tierProgress } from '../../common/streak/components';
 import { board } from '../../common/streak/store';
+import { EXTENSION, fof, placed, WIDGETS } from '../../common/streak/widgetHosts';
 
 declare const flarum: any;
 declare const m: import('mithril').Static;
@@ -88,11 +89,21 @@ export class BonfireWidget extends Component {
   }
 }
 
-const WIDGETS = [
-  { key: 'cadenceMyFlame', type: 'cadence-my-flame', label: 'widgets.my_flame', icon: 'fas fa-fire', component: MyFlameWidget },
-  { key: 'cadenceTopFlames', type: 'cadence-top-flames', label: 'widgets.top_flames', icon: 'fas fa-ranking-star', component: TopFlamesWidget },
-  { key: 'cadenceBonfire', type: 'cadence-bonfire', label: 'side.bonfire', icon: 'fas fa-campground', component: BonfireWidget },
-];
+const COMPONENTS: Record<string, any> = {
+  cadenceMyFlame: MyFlameWidget,
+  cadenceTopFlames: TopFlamesWidget,
+  cadenceBonfire: BonfireWidget,
+};
+
+/**
+ * Whether a widget has anything to show this viewer. FoF draws its column for
+ * any widget it is given, so one that would render nothing is not given.
+ */
+const hasContent: Record<string, () => boolean> = {
+  cadenceMyFlame: () => !!app.session.user && !!ownFlame() && !!app.forum.attribute('canEarnStreaks'),
+  cadenceTopFlames: () => true,
+  cadenceBonfire: () => !!board('current', 1, 0, { me: '0' }).data?.stats,
+};
 
 export function hasFofWidgets(): boolean {
   return typeof flarum !== 'undefined' && !!flarum?.extensions && 'fof-forum-widgets-core' in flarum.extensions;
@@ -101,7 +112,7 @@ export function hasFofWidgets(): boolean {
 /**
  * Register with every widget host that is present — Bespoke and
  * fof/forum-widgets-core — resolved at runtime, never imported, so the bundle
- * is the same whether either is installed.
+ * is the same whether either is installed. Only called while streaks are on.
  */
 export function registerWidgets(): void {
   const g = globalThis as any;
@@ -112,23 +123,23 @@ export function registerWidgets(): void {
       g.BespokeWidgetQueue.push({
         type: w.type,
         // 🚨 A translation KEY: Bespoke resolves it, and calls string methods on it.
-        label: `ernestdefoe-cadence.forum.streak.${w.label}`,
+        label: `ernestdefoe-cadence.forum.streak.${w.key === 'cadenceBonfire' ? 'side.bonfire' : `widgets.${w.label}`}`,
         icon: w.icon,
         zones: ['sidebar', 'above-list', 'below-list', 'footer'],
         schema: [],
-        component: { view: () => m(w.component) },
+        component: { view: () => m(COMPONENTS[w.key]) },
       })
     );
   }
 
   if (hasFofWidgets()) {
-    const widgetsMod = flarum.reg?.get?.('fof-forum-widgets-core', 'common/extend/Widgets');
-    const widgetMod = flarum.reg?.get?.('fof-forum-widgets-core', 'common/components/Widget');
-    const Widgets = widgetsMod?.default ?? widgetsMod;
-    const WidgetBase = (widgetMod?.default ?? widgetMod) as { new (...args: any[]): any } | undefined;
-    if (!Widgets || !WidgetBase) return;
+    const Widgets = fof('common/extend/Widgets');
+    const WidgetBase = fof('common/components/Widget') as { new (...args: any[]): any } | undefined;
+    if (!Widgets || !WidgetBase || !(app as any).widgets) return;
 
+    const title = (w: (typeof WIDGETS)[number]) => t(w.key === 'cadenceBonfire' ? 'side.bonfire' : `widgets.${w.label}`);
     const widgets = new Widgets();
+
     WIDGETS.forEach((w, position) => {
       class FlameFofWidget extends WidgetBase {
         className() {
@@ -141,24 +152,28 @@ export function registerWidgets(): void {
           return w.icon;
         }
         title() {
-          return t(w.label);
+          return title(w);
         }
         content() {
-          return m(w.component);
+          return m(COMPONENTS[w.key]);
         }
       }
 
       widgets.add({
         key: w.key,
         component: FlameFofWidget,
-        title: () => t(w.label),
+        title: () => title(w),
         icon: w.icon,
-        isDisabled: false,
+        // Shown only where the admin placed it, and only with something in it.
+        isDisabled: () => !placed((app as any).widgets.config, w.key) || !hasContent[w.key](),
         isUnique: true,
         placement: 'end',
         position,
       });
     });
-    widgets.extend(app, 'ernestdefoe-cadence');
+    widgets.extend(app, EXTENSION);
+
+    // FoF drew its sections before this ran; a placed widget appears now.
+    m.redraw();
   }
 }

@@ -2,6 +2,7 @@ import app from 'flarum/admin/app';
 import Admin from 'flarum/common/extenders/Admin';
 import Overview from './streak/Overview';
 import TiersEditor from './streak/TiersEditor';
+import Building from './streak/Building';
 
 declare const m: import('mithril').Static;
 
@@ -53,6 +54,8 @@ export default [
     .permission(() => ({ icon: 'fas fa-fire', label: t('streak.permission_view'), permission: 'cadence.viewStreaks', allowGuest: true }), 'view')
     .permission(() => ({ icon: 'fas fa-fire', label: t('streak.permission_earn'), permission: 'cadence.earnStreaks' }), 'reply')
 
+    // The history rebuild's progress, whether or not streaks are on: it fills the activity map too.
+    .customSetting(() => m(Building), 201)
     .customSetting(() => m('h2.CadenceAdmin-heading', t('streak.heading')), 200)
     .setting(bool('streaks', 'streak.enabled'), 199)
     .customSetting(

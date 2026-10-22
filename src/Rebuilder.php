@@ -9,56 +9,62 @@ use Illuminate\Database\Query\Builder;
 /**
  * Rebuilds the posts and likes buckets from the forum's own tables.
  *
- * Used by `cadence:rebuild` and by the migration that cleared out activity
- * recorded before the map was limited to what its audience can see.
+ * Driven a slice of members at a time by the Backfill (`cadence:rebuild`, the
+ * queue, the scheduler, or the admin page) — never from a migration.
  */
 class Rebuilder
 {
+    private ?bool $likes = null;
+
     public function __construct(private ConnectionInterface $db)
     {
     }
 
     /**
-     * @param  callable(string): void  $say
-     * @return int buckets written
+     * Rebuild the posts and likes buckets of these members only.
+     *
+     * 🚨 A slice, never the whole table: a forum with half a million posts
+     * took longer than a web request is allowed to live, and this used to run
+     * from a migration inside the "enable" click (Discuss #15, a Cloudflare
+     * 502). The Backfill walks members in slices of a few hundred, each one
+     * its own transaction, so an interrupted run loses at most one slice and
+     * repeating a slice changes nothing.
+     *
+     * @param  int[]  $ids
      */
-    public function rebuild(?callable $say = null): int
+    public function rebuildUsers(array $ids): void
     {
-        $say ??= fn (string $line) => null;
+        if (! $ids) {
+            return;
+        }
 
-        $likes = $this->db->getSchemaBuilder()->hasTable('post_likes');
+        $this->likes ??= $this->db->getSchemaBuilder()->hasTable('post_likes');
 
         /*
          * 🚨 Only the kinds this can rebuild are cleared. Reactions and best
-         * answers have no timestamp to rebuild from, so truncating the table
-         * would erase them for good — and this also runs from a migration,
-         * where nobody chose to lose them.
+         * answers have no timestamp to rebuild from, so clearing them would
+         * erase them for good.
          */
-        $say('Clearing existing buckets…');
         $this->db->table('cadence_activity')
-            ->whereIn('kind', $likes ? [Recorder::DISCUSSION, Recorder::REPLY, Recorder::LIKE] : [Recorder::DISCUSSION, Recorder::REPLY])
+            ->whereIn('user_id', $ids)
+            ->whereIn('kind', $this->likes ? [Recorder::DISCUSSION, Recorder::REPLY, Recorder::LIKE] : [Recorder::DISCUSSION, Recorder::REPLY])
             ->delete();
 
         /*
-         * 🚨 Aggregated in SQL rather than by loading posts into PHP. A forum
-         * with two million posts is an ordinary forum, and walking them in
-         * Eloquent to count them is minutes of work and a memory ceiling for a
-         * result the database can produce directly.
+         * 🚨 Aggregated in SQL rather than by loading posts into PHP: the
+         * database produces the buckets directly.
          *
-         * 🚨 The filter is the correctness of the whole thing, and it is
-         * Flarum's own: the posts the map's audience could open (see Audience).
-         * That drops private discussions, direct messages, restricted tags,
-         * hidden and unapproved posts — and whatever another extension hides —
-         * without this class knowing any of those rules. `type = 'comment'`
-         * on top, because the event posts core writes for renames, locks and
-         * tag changes are Posts too.
+         * 🚨 The filter is Flarum's own: the posts the map's audience could
+         * open (see Audience). That drops private discussions, direct
+         * messages, restricted tags, hidden and unapproved posts — and
+         * whatever another extension hides. `type = 'comment'` on top, because
+         * the event posts core writes for renames, locks and tag changes are
+         * Posts too.
          */
-        $say('Aggregating posts…');
-
         $this->db->table('cadence_activity')->insertUsing(
             ['user_id', 'bucket', 'kind', 'count'],
             $this->visiblePosts()
-                ->whereNotNull('posts.user_id')
+                ->whereIn('posts.user_id', $ids)
                 ->selectRaw(
                     $this->col('posts.user_id').' AS user_id, '
                     .$this->hour('posts.created_at').' AS bucket, '
@@ -70,20 +76,17 @@ class Rebuilder
 
         /*
          * Likes carry their own created_at, so they rebuild exactly — and only
-         * on posts the audience could see, since liking something in a
-         * staff-only tag is activity in a staff-only tag.
+         * on posts the audience could see.
          *
          * 🚨 Reactions and best answers do NOT: neither records when it
-         * happened, so they can only ever accumulate from the moment this
-         * extension is installed. Said plainly in the README rather than left
-         * for someone to discover as a hole in their own history.
+         * happened, so they only accumulate from the moment this extension is
+         * installed. Said plainly in the README.
          */
-        if ($likes) {
-            $say('Aggregating likes…');
-
+        if ($this->likes) {
             $this->db->table('cadence_activity')->insertUsing(
                 ['user_id', 'bucket', 'kind', 'count'],
                 $this->db->table('post_likes')
+                    ->whereIn('post_likes.user_id', $ids)
                     ->whereNotNull('post_likes.created_at')
                     ->whereIn('post_likes.post_id', $this->visiblePosts()->select('posts.id'))
                     ->selectRaw(
@@ -92,11 +95,7 @@ class Rebuilder
                     )
                     ->groupBy('user_id', 'bucket')
             );
-        } else {
-            $say('Skipping likes — flarum/likes is not installed.');
         }
-
-        return $this->db->table('cadence_activity')->count();
     }
 
     private function visiblePosts(): Builder
