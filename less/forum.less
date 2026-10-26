@@ -166,6 +166,9 @@ button.CadenceMap-day {
   gap: 5px;
   color: var(--flame);
   font-weight: 700;
+  // One line tall, top-aligned: on the baseline an inline box adds a gap and made this button a pixel taller than its neighbours.
+  height: 20px;
+  vertical-align: top;
 }
 
 .FlameDropdown.is-out .FlameDropdown-label { color: var(--muted-color); }
