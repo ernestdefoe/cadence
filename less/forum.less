@@ -251,7 +251,9 @@ button.CadenceMap-day {
   border-top: 1px solid var(--control-bg);
   padding-top: 4px;
 
-  > a {
+  // Specific enough to beat core's coloured-header rule ([data-colored-header=true] .App-header a),
+  // which turned these links white on the white menu (ClaudiusH, Discuss d/39992 #19).
+  .FlamePanelMini & > a.LinkButton {
     display: flex;
     align-items: center;
     gap: 8px;
